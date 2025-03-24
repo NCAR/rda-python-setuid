@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
    char *name;
    char cname[80], prog[255];
    char file[] = __FILE__;
+   char *fpath = dirname(file);
    char pgstart[] = "pgstart";
    char **apntr = argv;
 
@@ -69,12 +70,10 @@ int main(int argc, char *argv[]) {
          strcpy(cname, (name == NULL ? argv[0] : ++name));
       }
    }
-   sprintf(prog, "%s/%s.py", dirname(file), cname);
-
-   if(is_executable(prog)) {
-      execv(prog, argv);  /* call Python script */
-   } else{
-	  sprintf(prog, "%s/pgstart.py", dirname(file), cname);
-      execv(prog, apntr);  /* pass the command to pgstart.py */
+   sprintf(prog, "%s/%s.py", fpath, cname);
+   if(is_executable(prog) == 0) {
+      sprintf(prog, "%s/pgstart.py", fpath);
+      argv = apntr;
    }
+   execv(prog, argv);  /* call Python script */
 }
