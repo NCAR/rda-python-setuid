@@ -42,16 +42,11 @@
 int is_executable(const char *filename) {
    struct stat sb;
 
-   if(stat(filename, &sb) == 0) {
-      if(sb.st_mode & S_IXUSR) {
-         return 1;
-      } else {
-    	 printf("%s: not executable\n", prog);
-      }
+   if(stat(filename, &sb) == 0 && sb.st_mode & S_IXUSR) {
+      return 1;
    } else {
-      printf("%s: not exists\n", prog);
+      return 0;
    }
-   return 0;
 }
 
 /* main program */
@@ -60,12 +55,13 @@ int main(int argc, char *argv[]) {
    char cname[80], prog[255];
    char file[] = __FILE__;
    char pgstart[] = "pgstart";
+   char **apntr = argv;
 
    name = strrchr(argv[0], '/');
    strcpy(cname, (name == NULL ? argv[0] : ++name));
 
    if(strstr(cname, pgstart) == cname) {
-      if(argc == 1 or argv[1][0] == '-') {
+      if(argc == 1 || argv[1][0] == '-') {
          strcpy(cname, pgstart);
       } else {
          argv += 1;
@@ -75,7 +71,10 @@ int main(int argc, char *argv[]) {
    }
    sprintf(prog, "%s/%s.py", dirname(file), cname);
 
-   if(is_executable(prog) {
+   if(is_executable(prog)) {
       execv(prog, argv);  /* call Python script */
+   } else{
+	  sprintf(prog, "%s/pgstart.py", dirname(file), cname);
+      execv(prog, apntr);  /* pass the command to pgstart.py */
    }
 }
