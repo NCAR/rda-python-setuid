@@ -35,10 +35,16 @@ def main():
    PgLOG.set_suid(PgLOG.PGLOG['EUID'])
    if PgLOG.PGLOG['CURUID'] != PgLOG.PGLOG['RDAUSER'] and PgLOG.PGLOG['CURUID'] != "zji": permit = 0
 
-   if argv:
+   while argv:
       ms = re.match(r'^-(\w+)$', argv[0])
-      if ms:
-         opt = ms.group(1)
+      if not ms: break
+      argv.pop(0)
+      opt = ms.group(1)
+      if opt == "bg":
+         bckgrd = " &"
+      elif opt == "cwd":
+         if argv: workdir = argv.pop(0)
+      elif opt != "fg":
          display_message(opt)
 
    if not (permit and argv):
@@ -52,7 +58,17 @@ def main():
       if not permit:
          print("* You must be '{}' to execute a command as user '{}'.".format(PgLOG.PGLOG['RDAUSER'], euser))
       print("********************************************************************")
+      sys.exit(0)
 
+   cmd = PgLOG.argv_to_string(argv)
+   
+   msg = "{}-{}{}-{}".format(PgLOG.PGLOG['HOSTNAME'], aname, PgLOG.current_datetime(), PgLOG.PGLOG['CURUID'])
+   if workdir:
+      msg += "-" + workdir
+      os.chdir(workdir)
+
+   PgLOG.pglog("{}: {}".format(msg, cmd), PgLOG.MSGLOG)
+   os.system(cmd + bckgrd)
    sys.exit(0)
 
 #
