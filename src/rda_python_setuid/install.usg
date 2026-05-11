@@ -41,6 +41,36 @@
    Running pywrapper-install --link will lock it down (chmod 700) so that only
    pywrapper (running as CommonUser via its setuid bit) can execv it.
 
+ Environment Setup:
+
+   Option A - Python venv (recommended for DECS machines):
+
+      1. Create and activate the virtual environment:
+            python3 -m venv $ENVHOME
+            source $ENVHOME/bin/activate
+
+      2. Install the required packages:
+            pip install rda_python_setuid rda_python_dsarch ...
+
+      3. Deactivate when done:
+            deactivate
+
+      $ENVHOME is typically /glade/u/home/gdexdata/rdamsenv on DECS machines.
+
+   Option B - Conda (recommended for DAV/Casper):
+
+      1. Create and activate the conda environment:
+            conda create -n pg-rda python=3.10
+            conda activate pg-rda
+
+      2. Install the required packages:
+            pip install rda_python_setuid rda_python_dsarch ...
+
+      The conda environment is typically located at:
+            /glade/work/gdexdata/conda-envs/pg-rda
+
+      Use 'conda activate pg-rda' to activate it before running pywrapper-install.
+
  Setup sequence for a new environment:
 
    1. Install the target package and its dependencies:
