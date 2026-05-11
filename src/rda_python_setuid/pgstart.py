@@ -18,6 +18,7 @@ import os
 import sys
 import re
 import pwd
+import subprocess
 from rda_python_common import PgLOG
 
 #
@@ -25,15 +26,19 @@ from rda_python_common import PgLOG
 #
 def main():
 
-   permit = 1
+   permit = False
    PgLOG.PGLOG['LOGFILE'] = "pgstart.log"
    aname = PgLOG.get_command()
    bckgrd = ""
    workdir = None
    argv = sys.argv[1:]
 
-   PgLOG.set_suid(PgLOG.PGLOG['EUID'])
-   if PgLOG.PGLOG['CURUID'] != PgLOG.PGLOG['RDAUSER'] and PgLOG.PGLOG['CURUID'] != "zji": permit = 0
+   ruid = PgLOG.PGLOG['RUID']
+   euid = PgLOG.PGLOG['EUID']
+   ruser = pwd.getpwuid(ruid).pw_name
+   euser = pwd.getpwuid(euid).pw_name
+   if ruser == euser or ruser == PgLOG.PGLOG['GDEXUSER']: permit = True
+   PgLOG.set_suid(euid)
 
    while argv:
       ms = re.match(r'^-(\w+)$', argv[0])
@@ -48,27 +53,26 @@ def main():
          display_message(opt)
 
    if not (permit and argv):
-      ruid = PgLOG.PGLOG['RUID']
-      euid = PgLOG.PGLOG['EUID']
-      ruser = pwd.getpwuid(ruid).pw_name
-      euser = pwd.getpwuid(euid).pw_name
       print("********************************************************************")
       print("* Your Login Name is {}({}) & Effective User Name is {}({}).".format(ruser, ruid, euser, euid))
       print("* Pass a command or options -(plg|env|inc) to run '{}'.".format(aname))
       if not permit:
-         print("* You must be '{}' to execute a command as user '{}'.".format(PgLOG.PGLOG['RDAUSER'], euser))
+         print("* You must be '{}' or '{}' to execute a command as user '{}'.".format(euser, PgLOG.PGLOG['GDEXUSER'], euser))
       print("********************************************************************")
       sys.exit(0)
 
    cmd = PgLOG.argv_to_string(argv)
-   
+
    msg = "{}-{}{}-{}".format(PgLOG.PGLOG['HOSTNAME'], aname, PgLOG.current_datetime(), PgLOG.PGLOG['CURUID'])
    if workdir:
       msg += "-" + workdir
       os.chdir(workdir)
 
    PgLOG.pglog("{}: {}".format(msg, cmd), PgLOG.MSGLOG)
-   os.system(cmd + bckgrd)
+   if bckgrd:
+      subprocess.Popen(argv)
+   else:
+      subprocess.run(argv)
    sys.exit(0)
 
 #
