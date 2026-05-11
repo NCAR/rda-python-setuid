@@ -36,6 +36,6 @@ where = ["src"]
 "Homepage" = "https://github.com/NCAR/rda-python-setuid"
 
 [project.scripts]
-"pywrapper.py" = "rda_python_setuid.pywrapper:main"
+"setuid_pywrapper" = "rda_python_setuid.pywrapper:main"
 "pgstart.py" = "rda_python_setuid.pgstart:main"
 "pywrapper-install" = "rda_python_setuid.install:main"
