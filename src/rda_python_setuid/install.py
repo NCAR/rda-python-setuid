@@ -52,7 +52,16 @@ def run(cmd):
    subprocess.run(cmd, check=True)
 
 
+def show_usage():
+   usgfile = os.path.join(os.path.dirname(__file__), 'install.usg')
+   os.system("more " + usgfile)
+   sys.exit(0)
+
+
 def main():
+
+   if len(sys.argv) == 1:
+      show_usage()
 
    parser = argparse.ArgumentParser(
       description="Compile and install the pywrapper setuid C binary."

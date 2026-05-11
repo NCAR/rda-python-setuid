@@ -1,0 +1,70 @@
+ Compile and install the pywrapper setuid C binary, and set up program entries
+ that execute Python scripts as a common or effective user via the setuid mechanism.
+ Must be run inside the target Python virtual environment.
+
+ Usage: pywrapper-install --user USER [--envhome BINDIR] [--pgstart | --link PROGRAM]
+
+      - Option --user USER (required)
+          The user name to own the setuid binary.  For Mode 1 (CommonUser program),
+          this is the common user (e.g. gdexdata).  For Mode 2 (pgstart), this is
+          the specialist user (e.g. zji).
+
+      - Option --envhome BINDIR
+          Path to the venv bin/ directory.  Defaults to the bin/ directory of the
+          currently active Python executable.  Only needed when installing into an
+          environment other than the one currently active.
+
+      - Option --pgstart
+          Mode 2: copy the compiled pywrapper binary to pgstart_USER (owned by USER,
+          chmod 4750).  Allows USER to run arbitrary commands as themselves via the
+          setuid wrapper.  Cannot be combined with --link.
+
+      - Option --link PROGRAM
+          Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory, then
+          lock down setuid_PROGRAM (chmod 700, owned by USER) so users cannot bypass
+          the setuid wrapper by running setuid_PROGRAM directly.  Cannot be combined
+          with --pgstart.
+
+ When run without --pgstart or --link, the default action is to compile pywrapper.c
+ (bundled with this package) and install it as bin/pywrapper, owned by USER with
+ chmod 4750 (setuid).  This step must be done once per environment before using
+ --pgstart or --link.
+
+ Convention for wrapped programs:
+   Any Python package whose program is to be run via pywrapper must register its
+   connector entry point with a setuid_ prefix in pyproject.toml, e.g.:
+
+      [project.scripts]
+      "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
+
+   pip install then places setuid_dsarch in the bin/ directory automatically.
+   Running pywrapper-install --link will lock it down (chmod 700) so that only
+   pywrapper (running as CommonUser via its setuid bit) can execv it.
+
+ Setup sequence for a new environment:
+
+   1. Install the target package and its dependencies:
+         pip install rda_python_dsarch
+
+   2. Compile pywrapper (once per environment):
+         pywrapper-install --user gdexdata
+
+   3. Wire up each program as a setuid entry:
+         pywrapper-install --link dsarch --user gdexdata
+
+   4. Optionally, allow a specialist to run commands as themselves:
+         pywrapper-install --pgstart --user zji
+
+ Examples:
+
+   1. Compile and install pywrapper for common user gdexdata:
+         pywrapper-install --user gdexdata
+
+   2. Same, but targeting a specific environment:
+         pywrapper-install --user gdexdata --envhome /glade/u/home/gdexdata/rdamsenv/bin/
+
+   3. Wire up dsarch to run as gdexdata via pywrapper:
+         pywrapper-install --link dsarch --user gdexdata
+
+   4. Allow specialist zji to run commands as themselves via pgstart:
+         pywrapper-install --pgstart --user zji
