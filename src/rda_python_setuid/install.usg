@@ -55,21 +55,21 @@
       3. Deactivate when done:
             deactivate
 
-      $ENVHOME is typically /glade/u/home/gdexdata/rdamsenv on DECS machines.
+      $ENVHOME is typically /glade/u/home/gdexdata/gdexmsenv on DECS machines.
 
    Option B - Conda (recommended for DAV/Casper):
 
       1. Create and activate the conda environment:
-            conda create -n pg-rda python=3.10
-            conda activate pg-rda
+            conda create -n pg-gdex python=3.10
+            conda activate pg-gdex
 
       2. Install the required packages:
             pip install rda_python_setuid rda_python_dsarch ...
 
       The conda environment is typically located at:
-            /glade/work/gdexdata/conda-envs/pg-rda
+            /glade/work/gdexdata/conda-envs/pg-gdex
 
-      Use 'conda activate pg-rda' to activate it before running pywrapper-install.
+      Use 'conda activate pg-gdex' to activate it before running pywrapper-install.
 
  Setup sequence for a new environment:
 
@@ -91,7 +91,7 @@
          pywrapper-install --user gdexdata
 
    2. Same, but targeting a specific environment:
-         pywrapper-install --user gdexdata --envhome /glade/u/home/gdexdata/rdamsenv/bin/
+         pywrapper-install --user gdexdata --envhome /glade/u/home/gdexdata/gdexmsenv/bin/
 
    3. Wire up dsarch to run as gdexdata via pywrapper:
          pywrapper-install --link dsarch --user gdexdata
