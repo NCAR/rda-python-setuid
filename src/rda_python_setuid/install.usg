@@ -31,15 +31,27 @@
  --pgstart or --link.
 
  Convention for wrapped programs:
-   Any Python package whose program is to be run via pywrapper must register its
-   connector entry point with a setuid_ prefix in pyproject.toml, e.g.:
+   Any Python package whose program is to be run via pywrapper must:
 
-      [project.scripts]
-      "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
+   1. Declare rda_python_setuid as a dependency in pyproject.toml:
 
-   pip install then places setuid_dsarch in the bin/ directory automatically.
-   Running pywrapper-install --link will lock it down (chmod 700) so that only
-   pywrapper (running as CommonUser via its setuid bit) can execv it.
+         [project]
+         dependencies = [
+           "rda_python_setuid",
+           ...
+         ]
+
+      This ensures pywrapper-install is available in the environment after
+      pip install.
+
+   2. Register its connector entry point with a setuid_ prefix in pyproject.toml:
+
+         [project.scripts]
+         "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
+
+      pip install then places setuid_dsarch in the bin/ directory automatically.
+      Running pywrapper-install --link will lock it down (chmod 700) so that only
+      pywrapper (running as CommonUser via its setuid bit) can execv it.
 
  Environment Setup:
 
