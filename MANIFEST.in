@@ -1,1 +1,2 @@
 include src/rda_python_setuid/pywrapper.c
+include src/rda_python_setuid/install.usg
