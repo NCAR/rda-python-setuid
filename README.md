@@ -68,7 +68,7 @@ with no arguments to display the full user guide:
 pywrapper-install
 ```
 
-### Quick setup sequence
+### Full setuid setup (requires sudo access to CommonUser)
 
 ```bash
 # 1. Install the target package (pulls in rda_python_setuid automatically):
@@ -82,6 +82,16 @@ pywrapper-install --link dsarch --user gdexdata
 
 # 4. Optionally, allow a specialist to run commands as themselves:
 pywrapper-install --pgstart --user zji
+```
+
+### Simple install (no sudo required, runs as current user)
+
+Users who do not need the setuid mechanism can skip steps 2–4 and create a
+direct symlink from `dsarch` to `setuid_dsarch`:
+
+```bash
+pip install rda_python_dsarch
+pywrapper-install --link dsarch --simple
 ```
 
 ## Runtime flow

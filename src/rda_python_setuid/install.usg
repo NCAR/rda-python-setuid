@@ -2,7 +2,7 @@
  that execute Python scripts as a common or effective user via the setuid mechanism.
  Must be run inside the target Python virtual environment.
 
- Usage: pywrapper-install --user USER [--envhome BINDIR] [--pgstart | --link PROGRAM]
+ Usage: pywrapper-install --user USER [--envhome BINDIR] [--pgstart | --link PROGRAM [--simple]]
 
       - Option --user USER (required)
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
@@ -24,6 +24,12 @@
           lock down setuid_PROGRAM (chmod 700, owned by USER) so users cannot bypass
           the setuid wrapper by running setuid_PROGRAM directly.  Cannot be combined
           with --pgstart.
+
+      - Option --simple (use with --link)
+          Simple install: create a symlink PROGRAM -> setuid_PROGRAM directly,
+          skipping the setuid mechanism entirely.  The program runs as the current
+          user with no privilege change.  --user is not required with this option.
+          Useful for users who do not need or cannot set up the setuid wrapper.
 
  When run without --pgstart or --link, the default action is to compile pywrapper.c
  (bundled with this package) and install it as bin/pywrapper, owned by USER with
@@ -85,6 +91,8 @@
 
  Setup sequence for a new environment:
 
+   Option A - Full setuid setup (requires sudo access to CommonUser):
+
    1. Install the target package and its dependencies:
          pip install rda_python_dsarch
 
@@ -96,6 +104,14 @@
 
    4. Optionally, allow a specialist to run commands as themselves:
          pywrapper-install --pgstart --user zji
+
+   Option B - Simple install (no sudo required, runs as current user):
+
+   1. Install the target package:
+         pip install rda_python_dsarch
+
+   2. Create a direct symlink to the connector script:
+         pywrapper-install --link dsarch --simple
 
  Examples:
 
@@ -110,3 +126,6 @@
 
    4. Allow specialist zji to run commands as themselves via pgstart:
          pywrapper-install --pgstart --user zji
+
+   5. Simple install of dsarch for a user who does not need setuid:
+         pywrapper-install --link dsarch --simple
