@@ -77,7 +77,7 @@ def main():
    )
    parser.add_argument(
       '--user', default=None,
-      help="User name to own the setuid binary (required unless --simple is used)"
+      help="User name to own the setuid binary (default: current login user for --pgstart, gdexdata otherwise)"
    )
    parser.add_argument(
       '--simple', action='store_true',
@@ -94,8 +94,12 @@ def main():
    )
    args = parser.parse_args()
 
-   if not args.simple and args.user is None:
-      parser.error("--user is required unless --simple is used")
+   if args.user is None and not args.simple:
+      import pwd
+      if args.pgstart:
+         args.user = pwd.getpwuid(os.getuid()).pw_name
+      else:
+         args.user = 'gdexdata'
 
    bindir = args.envhome or get_bindir()
    pywrapper = os.path.join(bindir, 'pywrapper')
