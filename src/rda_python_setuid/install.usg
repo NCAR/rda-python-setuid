@@ -4,10 +4,11 @@
 
  Usage: pywrapper-install --user USER [--envhome BINDIR] [--pgstart | --link PROGRAM [--simple]]
 
-      - Option --user USER (required)
+      - Option --user USER
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
           this is the common user (e.g. gdexdata).  For Mode 2 (pgstart), this is
-          the specialist user (e.g. zji).
+          the specialist user (e.g. zji).  Defaults to 'gdexdata' unless --pgstart
+          is given, in which case it defaults to the current login user.
 
       - Option --envhome BINDIR
           Path to the venv bin/ directory.  Defaults to the bin/ directory of the
