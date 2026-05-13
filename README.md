@@ -14,6 +14,28 @@ Two modes are supported:
 - **Mode 2 (pgstart specialist):** a copy `pgstart_zji` runs any command as specialist
   `zji` via `pgstart.py`, restricted to authorized users.
 
+Two Python entry points are packaged alongside the C wrapper:
+
+- **`pywrapper.py`** — the default fallback target executed when `pywrapper.c`
+  cannot resolve a matching `setuid_<program>` entry point.  Acquires the
+  effective UID via `PgLOG.set_suid()`, prints the caller's real and effective
+  user names, and shows the `pyproject.toml` snippet plus the
+  `pywrapper-install -l <program>` command needed to wrap a new script.
+  Diagnostic flags `-env`, `-inc`, and `-plg` dump the environment variables,
+  `sys.path`, and `PGLOG` dictionary respectively — handy for verifying the
+  setuid environment before wiring up a real program.
+
+- **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<USER>`
+  copy of `pywrapper`.  Reads the real/effective UIDs from `PGLOG`, then
+  permits execution only if the real user matches the effective user or the
+  shared GDEX common user (`PGLOG['GDEXUSER']`); unauthorized callers receive
+  an informational message and exit.  After authorization it parses leading
+  flag tokens — `-bg` (background via `subprocess.Popen`), `-fg` (explicit
+  foreground, default), `-cwd <dir>` (chdir before exec), and the same
+  `-env`/`-inc`/`-plg` diagnostics as `pywrapper.py` — and then runs the
+  remaining arguments as a command (`subprocess.run`/`Popen`) under the
+  effective UID, logging a host/program/timestamp/user line to `pgstart.log`.
+
 ## Dependency requirement
 
 Any Python package whose programs are to be run via the setuid mechanism must declare
