@@ -2,7 +2,7 @@
  that execute Python scripts as a common or effective user via the setuid mechanism.
  Must be run inside the target Python virtual environment.
 
- Usage: pywrapper-install [-u USER] [-e BINDIR] [-p | -l PROGRAM [-s]]
+ Usage: pywrapper-install [-u USER] [-e ENVHOME] [-p | -l PROGRAM [-s]]
 
       - Option -u or --user USER
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
@@ -10,10 +10,11 @@
           the specialist user (e.g. zji).  Defaults to 'gdexdata' unless -p/--pgstart
           is given, in which case it defaults to the current login user.
 
-      - Option -e or --envhome BINDIR
-          Path to the venv bin/ directory.  Defaults to the bin/ directory of the
-          currently active Python executable.  Only needed when installing into an
-          environment other than the one currently active.
+      - Option -e or --envhome ENVHOME
+          Path to the venv root directory (the parent of bin/).  Defaults to the
+          parent of the currently active Python executable's bin/ directory.
+          Only needed when installing into an environment other than the one
+          currently active.
 
       - Option -p or --pgstart
           Mode 2: copy the compiled pywrapper binary to pgstart_USER (owned by USER,
@@ -120,7 +121,7 @@
          pywrapper-install
 
    2. Same, but targeting a specific environment:
-         pywrapper-install -e /glade/u/home/gdexdata/gdexmsenv/bin/
+         pywrapper-install -e /glade/u/home/gdexdata/gdexmsenv
 
    3. Wire up dsarch to run as gdexdata via pywrapper:
          pywrapper-install -l dsarch

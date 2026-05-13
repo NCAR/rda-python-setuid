@@ -12,16 +12,16 @@
 #
 # Usage:
 #   # 1. Compile and install pywrapper (run once per environment):
-#   pywrapper-install [-u gdexdata] [-e $ENVHOME/bin/]
+#   pywrapper-install [-u gdexdata] [-e $ENVHOME]
 #
 #   # 2. Create pgstart_USER entry so USER can run commands as themselves:
-#   pywrapper-install -p [-u zji] [-e $ENVHOME/bin/]
+#   pywrapper-install -p [-u zji] [-e $ENVHOME]
 #
 #   # 3. Create a symlink so a program runs as CommonUser via pywrapper (setuid):
-#   pywrapper-install -l myprog [-u gdexdata] [-e $ENVHOME/bin/]
+#   pywrapper-install -l myprog [-u gdexdata] [-e $ENVHOME]
 #
 #   # 4. Simple install: symlink PROGRAM -> setuid_PROGRAM (no setuid, runs as current user):
-#   pywrapper-install -l myprog -s [-e $ENVHOME/bin/]
+#   pywrapper-install -l myprog -s [-e $ENVHOME]
 #
 # Convention for wrapped programs:
 #   The target package must register its connector entry point with a setuid_ prefix:
@@ -73,7 +73,7 @@ def main():
    )
    parser.add_argument(
       '-e', '--envhome', default=None,
-      help="Path to the venv bin/ directory (default: bin/ dir of the current Python executable)"
+      help="Path to the venv root directory containing bin/ (default: parent of the current Python executable's bin/ dir)"
    )
    parser.add_argument(
       '-u', '--user', default=None,
@@ -101,7 +101,7 @@ def main():
       else:
          args.user = 'gdexdata'
 
-   bindir = args.envhome or get_bindir()
+   bindir = os.path.join(args.envhome, 'bin') if args.envhome else get_bindir()
    pywrapper = os.path.join(bindir, 'pywrapper')
 
    if args.link:
