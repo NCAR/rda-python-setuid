@@ -36,7 +36,7 @@ prefix:
 ```
 
 `pip install` then places `setuid_dsarch` in the environment's `bin/` directory
-automatically.  `pywrapper-install --link` locks it down to `chmod 700` so users
+automatically.  `pywrapper-install -l/--link` locks it down to `chmod 700` so users
 cannot bypass the setuid wrapper by running it directly.
 
 ## Environment setup
@@ -75,13 +75,13 @@ pywrapper-install
 pip install rda_python_dsarch
 
 # 2. Compile pywrapper C binary (once per environment):
-pywrapper-install --user gdexdata
+pywrapper-install
 
 # 3. Wire up each program as a setuid entry:
-pywrapper-install --link dsarch --user gdexdata
+pywrapper-install -l dsarch
 
 # 4. Optionally, allow a specialist to run commands as themselves:
-pywrapper-install --pgstart --user zji
+pywrapper-install -p -u zji
 ```
 
 ### Simple install (no sudo required, runs as current user)
@@ -91,7 +91,7 @@ direct symlink from `dsarch` to `setuid_dsarch`:
 
 ```bash
 pip install rda_python_dsarch
-pywrapper-install --link dsarch --simple
+pywrapper-install -l dsarch -s
 ```
 
 ## Runtime flow

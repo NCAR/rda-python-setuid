@@ -10,22 +10,22 @@
  *    python -m pip install rda_python_setuid
  *
  *    # Compile pywrapper and set setuid bit (owned by CommonUser):
- *    pywrapper-install --user CommonUser [--envhome $ENVHOME/bin]
+ *    pywrapper-install [-u CommonUser] [-e $ENVHOME/bin]
  *
- *    # For an existing python program, $ENVHOME/bin/CommonProgram.py, to execute it
+ *    # For an existing python program, $ENVHOME/bin/setuid_CommonProgram, to execute it
  *    # as the common user (Mode 1 - symlink):
- *    pywrapper-install --link CommonProgram [--envhome $ENVHOME/bin]
+ *    pywrapper-install -l CommonProgram [-u CommonUser] [-e $ENVHOME/bin]
  *    CommonProgram [options]
  *
  *    # For a specialist to run commands as themselves via pgstart (Mode 2):
- *    pywrapper-install --pgstart --user EffectUser [--envhome $ENVHOME/bin]
+ *    pywrapper-install -p [-u EffectUser] [-e $ENVHOME/bin]
  *    pgstart_EffectUser EffectProgram [options]
  *
  *           N: python 3 release number, it is 10 for Python 3.10.12
  *  CommonUser: a common user login name, such as gdexdata, for GDEXMS configuration
  *  EffectUser: any user login name in the same group of the common user
- *    $ENVHOME: /glade/u/home/gdexdata/rdamsenv (venv) on DECS machines, and
- *              /glade/work/gdexdata/conda-envs/pg-rda (conda) on DAV
+ *    $ENVHOME: /glade/u/home/gdexdata/gdexmsenv (venv) on DECS machines, and
+ *              /glade/work/gdexdata/conda-envs/pg-gdex (conda) on DAV
  *
  * Convention:
  *    Any Python package whose program is to be run via pywrapper must register
@@ -34,7 +34,7 @@
  *       "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
  *    pip install places setuid_dsarch in $ENVHOME/bin/.  pywrapper locates it by
  *    prepending setuid_ to the invoked program name.  No manual script creation needed.
- *    pywrapper-install --link will chown setuid_dsarch to CommonUser and chmod 700,
+ *    pywrapper-install -l/--link will chown setuid_dsarch to CommonUser and chmod 700,
  *    preventing direct execution by other users while still allowing pywrapper
  *    (which runs with EUID=CommonUser via the setuid bit) to execv it.
  *
