@@ -19,26 +19,38 @@ import sys
 import re
 import pwd
 import subprocess
-from rda_python_common import PgLOG
+from rda_python_common.pg_log import PgLOG
 
-#
-# main function to excecute this script
-#
 def main():
+   """Entry point for pgstart.
 
+   Checks whether the real user is authorized (must be the effective user or
+   the GDEX common user), then executes the supplied command as the effective
+   user.  Supports foreground/background execution and optional working-directory
+   change via command-line options.
+
+   Options (prefix with '-'):
+      bg   -- run command in background (non-blocking)
+      fg   -- run command in foreground (default, no-op flag)
+      cwd  -- change to the next argument as working directory before running
+      env  -- print environment variables and exit
+      inc  -- print sys.path include paths and exit
+      plg  -- print PGLOG variables and exit
+   """
+   pglog = PgLOG()
    permit = False
-   PgLOG.PGLOG['LOGFILE'] = "pgstart.log"
+   pglog.PGLOG['LOGFILE'] = "pgstart.log"
    aname = PgLOG.get_command()
-   bckgrd = ""
+   bckgrd = False
    workdir = None
    argv = sys.argv[1:]
 
-   ruid = PgLOG.PGLOG['RUID']
-   euid = PgLOG.PGLOG['EUID']
+   ruid = pglog.PGLOG['RUID']
+   euid = pglog.PGLOG['EUID']
    ruser = pwd.getpwuid(ruid).pw_name
    euser = pwd.getpwuid(euid).pw_name
-   if ruser == euser or ruser == PgLOG.PGLOG['GDEXUSER']: permit = True
-   PgLOG.set_suid(euid)
+   if ruser == euser or ruser == pglog.PGLOG['GDEXUSER']: permit = True
+   pglog.set_suid(euid)
 
    while argv:
       ms = re.match(r'^-(\w+)$', argv[0])
@@ -46,40 +58,43 @@ def main():
       argv.pop(0)
       opt = ms.group(1)
       if opt == "bg":
-         bckgrd = " &"
+         bckgrd = True
       elif opt == "cwd":
          if argv: workdir = argv.pop(0)
       elif opt != "fg":
-         display_message(opt)
+         display_message(pglog, opt)
 
    if not (permit and argv):
       print("********************************************************************")
       print("* Your Login Name is {}({}) & Effective User Name is {}({}).".format(ruser, ruid, euser, euid))
-      print("* Pass a command or options -(plg|env|inc) to run '{}'.".format(aname))
+      print("* Pass a command or options -(bg|fg|cwd|env|inc|plg) to run '{}'.".format(aname))
       if not permit:
-         print("* You must be '{}' or '{}' to execute a command as user '{}'.".format(euser, PgLOG.PGLOG['GDEXUSER'], euser))
+         print("* You must be '{}' or '{}' to execute a command as user '{}'.".format(euser, pglog.PGLOG['GDEXUSER'], euser))
       print("********************************************************************")
       sys.exit(0)
 
-   cmd = PgLOG.argv_to_string(argv)
+   cmd = pglog.argv_to_string(argv)
 
-   msg = "{}-{}{}-{}".format(PgLOG.PGLOG['HOSTNAME'], aname, PgLOG.current_datetime(), PgLOG.PGLOG['CURUID'])
+   msg = "{}-{}{}-{}".format(pglog.PGLOG['HOSTNAME'], aname, pglog.current_datetime(), pglog.PGLOG['CURUID'])
    if workdir:
       msg += "-" + workdir
       os.chdir(workdir)
 
-   PgLOG.pglog("{}: {}".format(msg, cmd), PgLOG.MSGLOG)
+   pglog.pglog("{}: {}".format(msg, cmd), PgLOG.MSGLOG)
    if bckgrd:
       subprocess.Popen(argv)
    else:
       subprocess.run(argv)
    sys.exit(0)
 
-#
-#  display message acording to the option passed in
-#
-def display_message(option):
+def display_message(pglog, option):
+   """Print diagnostic information for the given option and exit.
 
+   Args:
+      pglog (PgLOG): Initialized PgLOG instance.
+      option (str): One of 'env' (environment variables), 'inc' (sys.path),
+                    or 'plg' (PGLOG dict).  Prints an error for unknown values.
+   """
    if option == "env":
       print("Environment Variables:")
       for ename in sorted(os.environ):
@@ -90,8 +105,8 @@ def display_message(option):
          print(pname)
    elif option == "plg":
       print("PGLOG variables:")
-      for vname in sorted(PgLOG.PGLOG):
-         print("{}: {}".format(vname, PgLOG.PGLOG[vname]))
+      for vname in sorted(pglog.PGLOG):
+         print("{}: {}".format(vname, pglog.PGLOG[vname]))
    else:
       print("* {}: Unknown option".format(option))
 

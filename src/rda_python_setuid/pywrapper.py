@@ -17,15 +17,23 @@
 import os
 import sys
 import pwd
-from rda_python_common import PgLOG
+from rda_python_common.pg_log import PgLOG
 
-#
-# main function to excecute this script
-#
 def main():
+   """Entry point for setuid_pywrapper (the default pywrapper.c fallback target).
 
-   PgLOG.set_suid(PgLOG.PGLOG['EUID'])
-   inc = 1
+   When pywrapper.c cannot find a matching setuid_<program> entry point, it
+   falls back to executing this script.  Prints UID information and setup
+   instructions, or dumps diagnostic information when a flag is supplied.
+
+   Options:
+      -env  -- print environment variables and exit
+      -inc  -- print sys.path include paths and exit
+      -plg  -- print PGLOG variables and exit
+   """
+   pglog = PgLOG()
+   pglog.set_suid(pglog.PGLOG['EUID'])
+   inc = True
    print("********************************************************************")
    argv = sys.argv[1:]
    if argv:
@@ -33,35 +41,37 @@ def main():
          print("Environment Variables:")
          for ename in sorted(os.environ):
             print("{}: {}".format(ename, os.environ[ename]))
-         inc = 0
+         inc = False
       elif argv[0] == "-inc":
          print("Including Paths:")
          for pname in sorted(sys.path):
             print(pname)
-         inc = 0
+         inc = False
       elif argv[0] == "-plg":
          print("PGLOG variables:")
-         for vname in sorted(PgLOG.PGLOG):
-            print("{}: {}".format(vname, PgLOG.PGLOG[vname]))
-         inc = 0
+         for vname in sorted(pglog.PGLOG):
+            print("{}: {}".format(vname, pglog.PGLOG[vname]))
+         inc = False
       else:
          print("* {}: Unknown option".format(argv[0]))
    else:
-      ruid = PgLOG.PGLOG['RUID']
-      euid = PgLOG.PGLOG['EUID']
+      ruid = pglog.PGLOG['RUID']
+      euid = pglog.PGLOG['EUID']
       ruser = pwd.getpwuid(ruid).pw_name
       euser = pwd.getpwuid(euid).pw_name
-      print("* Your Login Name is {}({}) & Effective User Name is {}({}).".format(ruser, ruid, euser,euid))
-      print("* To wrap your python script 'yourscript.py', you install it as")
-      print("* an executable under $ENVHOME/bin/ and create a link to 'pywrapper'")
-      print("* under $ENVHOME/bin/ as 'ln -s pywrapper yourscript'.")
+      print("* Your Login Name is {}({}) & Effective User Name is {}({}).".format(ruser, ruid, euser, euid))
+      print("* To wrap a Python program 'yourscript', register its entry point")
+      print("* with a setuid_ prefix in pyproject.toml:")
+      print("*    [project.scripts]")
+      print("*    \"setuid_yourscript\" = \"your_package.module:main\"")
+      print("* Then run: pywrapper-install -l yourscript")
    if inc:
       print("* Include -env to show environment variables")
       print("* Include -inc to show included paths")
       print("* Include -plg to show PGLOG variables")
-   
+
    print("********************************************************************\n")
-   
+
    sys.exit(0)
 
 #
