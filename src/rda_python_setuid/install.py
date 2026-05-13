@@ -12,16 +12,16 @@
 #
 # Usage:
 #   # 1. Compile and install pywrapper (run once per environment):
-#   pywrapper-install --user gdexdata [--envhome $ENVHOME/bin/]
+#   pywrapper-install [-u gdexdata] [-e $ENVHOME/bin/]
 #
 #   # 2. Create pgstart_USER entry so USER can run commands as themselves:
-#   pywrapper-install --pgstart --user zji [--envhome $ENVHOME/bin/]
+#   pywrapper-install -p [-u zji] [-e $ENVHOME/bin/]
 #
 #   # 3. Create a symlink so a program runs as CommonUser via pywrapper (setuid):
-#   pywrapper-install --link myprog --user gdexdata [--envhome $ENVHOME/bin/]
+#   pywrapper-install -l myprog [-u gdexdata] [-e $ENVHOME/bin/]
 #
 #   # 4. Simple install: symlink PROGRAM -> setuid_PROGRAM (no setuid, runs as current user):
-#   pywrapper-install --link myprog --simple [--envhome $ENVHOME/bin/]
+#   pywrapper-install -l myprog -s [-e $ENVHOME/bin/]
 #
 # Convention for wrapped programs:
 #   The target package must register its connector entry point with a setuid_ prefix:
@@ -72,24 +72,24 @@ def main():
       description="Compile and install the pywrapper setuid C binary."
    )
    parser.add_argument(
-      '--envhome', default=None,
+      '-e', '--envhome', default=None,
       help="Path to the venv bin/ directory (default: bin/ dir of the current Python executable)"
    )
    parser.add_argument(
-      '--user', default=None,
-      help="User name to own the setuid binary (default: current login user for --pgstart, gdexdata otherwise)"
+      '-u', '--user', default=None,
+      help="User name to own the setuid binary (default: current login user for -p/--pgstart, gdexdata otherwise)"
    )
    parser.add_argument(
-      '--simple', action='store_true',
-      help="Simple install: create symlink PROGRAM -> setuid_PROGRAM, skipping setuid (use with --link)"
+      '-s', '--simple', action='store_true',
+      help="Simple install: create symlink PROGRAM -> setuid_PROGRAM, skipping setuid (use with -l/--link)"
    )
    group = parser.add_mutually_exclusive_group()
    group.add_argument(
-      '--pgstart', action='store_true',
+      '-p', '--pgstart', action='store_true',
       help="Create pgstart_USER for running commands as USER (Mode 2)"
    )
    group.add_argument(
-      '--link', metavar='PROGRAM',
+      '-l', '--link', metavar='PROGRAM',
       help="Create symlink PROGRAM -> pywrapper for running a fixed program as CommonUser (Mode 1)"
    )
    args = parser.parse_args()

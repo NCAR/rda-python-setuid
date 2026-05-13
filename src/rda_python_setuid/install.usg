@@ -2,34 +2,34 @@
  that execute Python scripts as a common or effective user via the setuid mechanism.
  Must be run inside the target Python virtual environment.
 
- Usage: pywrapper-install --user USER [--envhome BINDIR] [--pgstart | --link PROGRAM [--simple]]
+ Usage: pywrapper-install [-u USER] [-e BINDIR] [-p | -l PROGRAM [-s]]
 
-      - Option --user USER
+      - Option -u or --user USER
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
           this is the common user (e.g. gdexdata).  For Mode 2 (pgstart), this is
-          the specialist user (e.g. zji).  Defaults to 'gdexdata' unless --pgstart
+          the specialist user (e.g. zji).  Defaults to 'gdexdata' unless -p/--pgstart
           is given, in which case it defaults to the current login user.
 
-      - Option --envhome BINDIR
+      - Option -e or --envhome BINDIR
           Path to the venv bin/ directory.  Defaults to the bin/ directory of the
           currently active Python executable.  Only needed when installing into an
           environment other than the one currently active.
 
-      - Option --pgstart
+      - Option -p or --pgstart
           Mode 2: copy the compiled pywrapper binary to pgstart_USER (owned by USER,
           chmod 4750).  Allows USER to run arbitrary commands as themselves via the
-          setuid wrapper.  Cannot be combined with --link.
+          setuid wrapper.  Cannot be combined with -l/--link.
 
-      - Option --link PROGRAM
+      - Option -l or --link PROGRAM
           Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory, then
           lock down setuid_PROGRAM (chmod 700, owned by USER) so users cannot bypass
           the setuid wrapper by running setuid_PROGRAM directly.  Cannot be combined
-          with --pgstart.
+          with -p/--pgstart.
 
-      - Option --simple (use with --link)
+      - Option -s or --simple (use with -l/--link)
           Simple install: create a symlink PROGRAM -> setuid_PROGRAM directly,
           skipping the setuid mechanism entirely.  The program runs as the current
-          user with no privilege change.  --user is not required with this option.
+          user with no privilege change.  -u/--user is not required with this option.
           Useful for users who do not need or cannot set up the setuid wrapper.
 
  When run without --pgstart or --link, the default action is to compile pywrapper.c
@@ -98,13 +98,13 @@
          pip install rda_python_dsarch
 
    2. Compile pywrapper (once per environment):
-         pywrapper-install --user gdexdata
+         pywrapper-install
 
    3. Wire up each program as a setuid entry:
-         pywrapper-install --link dsarch --user gdexdata
+         pywrapper-install -l dsarch
 
    4. Optionally, allow a specialist to run commands as themselves:
-         pywrapper-install --pgstart --user zji
+         pywrapper-install -p
 
    Option B - Simple install (no sudo required, runs as current user):
 
@@ -112,21 +112,21 @@
          pip install rda_python_dsarch
 
    2. Create a direct symlink to the connector script:
-         pywrapper-install --link dsarch --simple
+         pywrapper-install -l dsarch -s
 
  Examples:
 
-   1. Compile and install pywrapper for common user gdexdata:
-         pywrapper-install --user gdexdata
+   1. Compile and install pywrapper for common user gdexdata (default):
+         pywrapper-install
 
    2. Same, but targeting a specific environment:
-         pywrapper-install --user gdexdata --envhome /glade/u/home/gdexdata/gdexmsenv/bin/
+         pywrapper-install -e /glade/u/home/gdexdata/gdexmsenv/bin/
 
    3. Wire up dsarch to run as gdexdata via pywrapper:
-         pywrapper-install --link dsarch --user gdexdata
+         pywrapper-install -l dsarch
 
    4. Allow specialist zji to run commands as themselves via pgstart:
-         pywrapper-install --pgstart --user zji
+         pywrapper-install -p -u zji
 
    5. Simple install of dsarch for a user who does not need setuid:
-         pywrapper-install --link dsarch --simple
+         pywrapper-install -l dsarch -s
