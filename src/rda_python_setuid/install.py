@@ -11,8 +11,11 @@
 #    Github: https://github.com/NCAR/rda-python-setuid.git
 #
 # Usage:
+#   # 0. Display this user guide:
+#   pywrapper-install
+#
 #   # 1. Compile and install pywrapper (run once per environment):
-#   pywrapper-install [-u gdexdata] [-e $ENVHOME]
+#   pywrapper-install -c [-u gdexdata] [-e $ENVHOME]
 #
 #   # 2. Create pgstart_USER entry so USER can run commands as themselves:
 #   pywrapper-install -p [-u zji] [-e $ENVHOME]
@@ -65,9 +68,6 @@ def show_usage():
 
 def main():
 
-   if len(sys.argv) == 1:
-      show_usage()
-
    parser = argparse.ArgumentParser(
       description="Compile and install the pywrapper setuid C binary."
    )
@@ -85,6 +85,10 @@ def main():
    )
    group = parser.add_mutually_exclusive_group()
    group.add_argument(
+      '-c', '--compile', action='store_true',
+      help="Compile pywrapper.c and install bin/pywrapper as a setuid binary (run once per environment)"
+   )
+   group.add_argument(
       '-p', '--pgstart', action='store_true',
       help="Create pgstart_USER for running commands as USER (Mode 2)"
    )
@@ -93,6 +97,9 @@ def main():
       help="Create symlink PROGRAM -> pywrapper for running a fixed program as CommonUser (Mode 1)"
    )
    args = parser.parse_args()
+
+   if not (args.compile or args.pgstart or args.link):
+      show_usage()
 
    if args.user is None and not args.simple:
       import pwd
@@ -142,8 +149,8 @@ def main():
       run(['sudo', '-u', args.user, 'chmod', '4750', target])
       print("Installed: {} (setuid, owned by {})".format(target, args.user))
 
-   else:
-      # Default: compile pywrapper.c and install pywrapper with setuid
+   elif args.compile:
+      # Compile pywrapper.c and install pywrapper with setuid
       src = get_c_source()
       src_dest = os.path.join(bindir, 'pywrapper.c')
       shutil.copy(src, src_dest)

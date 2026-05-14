@@ -2,7 +2,14 @@
  that execute Python scripts as a common or effective user via the setuid mechanism.
  Must be run inside the target Python virtual environment.
 
- Usage: pywrapper-install [-u USER] [-e ENVHOME] [-p | -l PROGRAM [-s]]
+ Usage: pywrapper-install [-u|--user USER] [-e|--envhome ENVHOME]
+                          ( -c|--compile
+                          | -p|--pgstart
+                          | -l|--link PROGRAM [-s|--simple] )
+
+ Run pywrapper-install with no arguments to display this user guide.  Exactly
+ one of -c/--compile, -p/--pgstart, or -l/--link must be given to perform an
+ action.
 
       - Option -u or --user USER
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
@@ -16,27 +23,28 @@
           Only needed when installing into an environment other than the one
           currently active.
 
+      - Option -c or --compile
+          Compile pywrapper.c (bundled with this package) and install it as
+          bin/pywrapper, owned by USER with chmod 4750 (setuid).  Must be done
+          once per environment before using -p/--pgstart or -l/--link.  Cannot
+          be combined with -p/--pgstart or -l/--link.
+
       - Option -p or --pgstart
           Mode 2: copy the compiled pywrapper binary to pgstart_USER (owned by USER,
           chmod 4750).  Allows USER to run arbitrary commands as themselves via the
-          setuid wrapper.  Cannot be combined with -l/--link.
+          setuid wrapper.  Cannot be combined with -c/--compile or -l/--link.
 
       - Option -l or --link PROGRAM
           Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory, then
           lock down setuid_PROGRAM (chmod 700, owned by USER) so users cannot bypass
           the setuid wrapper by running setuid_PROGRAM directly.  Cannot be combined
-          with -p/--pgstart.
+          with -c/--compile or -p/--pgstart.
 
       - Option -s or --simple (use with -l/--link)
           Simple install: create a symlink PROGRAM -> setuid_PROGRAM directly,
           skipping the setuid mechanism entirely.  The program runs as the current
           user with no privilege change.  -u/--user is not required with this option.
           Useful for users who do not need or cannot set up the setuid wrapper.
-
- When run without --pgstart or --link, the default action is to compile pywrapper.c
- (bundled with this package) and install it as bin/pywrapper, owned by USER with
- chmod 4750 (setuid).  This step must be done once per environment before using
- --pgstart or --link.
 
  Convention for wrapped programs:
    Any Python package whose program is to be run via pywrapper must:
@@ -99,7 +107,7 @@
          pip install rda_python_dsarch
 
    2. Compile pywrapper (once per environment):
-         pywrapper-install
+         pywrapper-install -c
 
    3. Wire up each program as a setuid entry:
          pywrapper-install -l dsarch
@@ -118,10 +126,10 @@
  Examples:
 
    1. Compile and install pywrapper for common user gdexdata (default):
-         pywrapper-install
+         pywrapper-install -c
 
    2. Same, but targeting a specific environment:
-         pywrapper-install -e /glade/u/home/gdexdata/gdexmsenv
+         pywrapper-install -c -e /glade/u/home/gdexdata/gdexmsenv
 
    3. Wire up dsarch to run as gdexdata via pywrapper:
          pywrapper-install -l dsarch

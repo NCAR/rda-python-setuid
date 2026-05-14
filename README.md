@@ -97,13 +97,13 @@ pywrapper-install
 pip install rda_python_dsarch
 
 # 2. Compile pywrapper C binary (once per environment):
-pywrapper-install
+pywrapper-install -c|--compile
 
 # 3. Wire up each program as a setuid entry:
-pywrapper-install -l dsarch
+pywrapper-install -l|--link dsarch
 
 # 4. Optionally, allow a specialist to run commands as themselves:
-pywrapper-install -p -u zji
+pywrapper-install -p|--pgstart -u|--user zji
 ```
 
 ### Simple install (no sudo required, runs as current user)
@@ -113,7 +113,7 @@ direct symlink from `dsarch` to `setuid_dsarch`:
 
 ```bash
 pip install rda_python_dsarch
-pywrapper-install -l dsarch -s
+pywrapper-install -l|--link dsarch -s|--simple
 ```
 
 ## Runtime flow
