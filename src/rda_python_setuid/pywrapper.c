@@ -10,15 +10,15 @@
  *    python -m pip install rda_python_setuid
  *
  *    # Compile pywrapper and set setuid bit (owned by CommonUser):
- *    pywrapper-install [-u CommonUser] [-e $ENVHOME/bin]
+ *    pywrapper-install -c|--compile [-u|--user CommonUser] [-e|--envhome $ENVHOME]
  *
  *    # For an existing python program, $ENVHOME/bin/setuid_CommonProgram, to execute it
  *    # as the common user (Mode 1 - symlink):
- *    pywrapper-install -l CommonProgram [-u CommonUser] [-e $ENVHOME/bin]
+ *    pywrapper-install -l|--link CommonProgram [-u|--user CommonUser] [-e|--envhome $ENVHOME]
  *    CommonProgram [options]
  *
  *    # For a specialist to run commands as themselves via pgstart (Mode 2):
- *    pywrapper-install -p [-u EffectUser] [-e $ENVHOME/bin]
+ *    pywrapper-install -p|--pgstart [-u|--user EffectUser] [-e|--envhome $ENVHOME]
  *    pgstart_EffectUser EffectProgram [options]
  *
  *           N: python 3 release number, it is 10 for Python 3.10.12
