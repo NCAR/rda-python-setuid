@@ -58,8 +58,9 @@ prefix:
 ```
 
 `pip install` then places `setuid_dsarch` in the environment's `bin/` directory
-automatically.  `pywrapper-install -l/--link` locks it down to `chmod 700` so users
-cannot bypass the setuid wrapper by running it directly.
+automatically.  `pywrapper-install -l/--link` creates the symlink
+`dsarch -> pywrapper`; running `dsarch` goes through the setuid wrapper, which
+execs `setuid_dsarch` as CommonUser.
 
 ## Environment setup
 
@@ -122,7 +123,6 @@ pywrapper-install -l|--link dsarch -s|--simple
 user runs:  dsarch [args]
               |  (symlink -> pywrapper, setuid bit -> EUID=gdexdata)
 pywrapper.c:  execv(bin/setuid_dsarch, args)
-              |  (chmod 700, only gdexdata can exec directly)
 setuid_dsarch: calls dsarch:main() as gdexdata
 ```
 
