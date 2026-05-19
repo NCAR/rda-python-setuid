@@ -35,10 +35,11 @@
           setuid wrapper.  Cannot be combined with -c/--compile or -l/--link.
 
       - Option -l or --link PROGRAM
-          Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory, then
-          lock down setuid_PROGRAM (chmod 700, owned by USER) so users cannot bypass
-          the setuid wrapper by running setuid_PROGRAM directly.  Cannot be combined
-          with -c/--compile or -p/--pgstart.
+          Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory so
+          that running PROGRAM invokes the setuid wrapper, which then execs
+          setuid_PROGRAM as CommonUser.  setuid_PROGRAM keeps its default
+          ownership and permissions.  Cannot be combined with -c/--compile or
+          -p/--pgstart.
 
       - Option -s or --simple (use with -l/--link)
           Simple install: create a symlink PROGRAM -> setuid_PROGRAM directly,
@@ -66,8 +67,8 @@
          "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
 
       pip install then places setuid_dsarch in the bin/ directory automatically.
-      Running pywrapper-install --link will lock it down (chmod 700) so that only
-      pywrapper (running as CommonUser via its setuid bit) can execv it.
+      Running pywrapper-install --link creates the symlink dsarch -> pywrapper;
+      pywrapper (running as CommonUser via its setuid bit) execs setuid_dsarch.
 
  Environment Setup:
 

@@ -31,8 +31,9 @@
 #      [project.scripts]
 #      "setuid_dsarch" = "rda_python_dsarch.dsarch:main"
 #   pip install places setuid_dsarch in the bin dir automatically.
-#   pywrapper-install --link dsarch will chown setuid_dsarch to CommonUser and
-#   chmod 700, so users cannot run it directly and must go through the setuid wrapper.
+#   pywrapper-install --link dsarch creates the symlink dsarch -> pywrapper, so
+#   users invoking dsarch go through the setuid wrapper which execs setuid_dsarch
+#   as CommonUser.
 #   pywrapper-install --link dsarch --simple creates dsarch -> setuid_dsarch directly,
 #   skipping setuid; the program runs as the current user.
 #
@@ -125,19 +126,13 @@ def main():
             os.symlink(script, target)
             print("Created: {} -> setuid_{}".format(target, args.link))
       else:
-         # Mode 1: symlink PROGRAM -> pywrapper, then lock down setuid_PROGRAM
-         # so users cannot bypass the setuid wrapper by running it directly.
+         # Mode 1: symlink PROGRAM -> pywrapper. setuid_PROGRAM is left with its
+         # default ownership/permissions so it can be loaded and executed normally.
          if os.path.lexists(target):
             print("Already exists: {}".format(target))
          else:
             os.symlink(pywrapper, target)
             print("Created: {} -> pywrapper".format(target))
-         # chown and chmod 700: only CommonUser can execute setuid_PROGRAM directly.
-         # pywrapper (running as CommonUser via setuid) can still execv it, but any
-         # direct invocation by other users will get "permission denied".
-         run(['sudo', '-u', args.user, 'chown', args.user, script])
-         run(['sudo', '-u', args.user, 'chmod', '700', script])
-         print("Locked: {} (chmod 700, owned by {})".format(script, args.user))
 
    elif args.pgstart:
       # Mode 2: copy pywrapper to pgstart_USER with setuid owned by USER
@@ -145,8 +140,11 @@ def main():
          print("Error: {} not found. Run pywrapper-install --user COMMONUSER first.".format(pywrapper))
          sys.exit(1)
       target = os.path.join(bindir, 'pgstart_{}'.format(args.user))
-      run(['sudo', '-u', args.user, 'cp', pywrapper, target])
-      run(['sudo', '-u', args.user, 'chmod', '4750', target])
+      import pwd
+      curuser = pwd.getpwuid(os.getuid()).pw_name
+      sudo_prefix = [] if curuser == args.user else ['sudo', '-u', args.user]
+      run(sudo_prefix + ['cp', pywrapper, target])
+      run(sudo_prefix + ['chmod', '4750', target])
       print("Installed: {} (setuid, owned by {})".format(target, args.user))
 
    elif args.compile:
