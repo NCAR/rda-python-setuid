@@ -37,6 +37,32 @@ Two Python entry points are packaged alongside the C wrapper:
   remaining arguments as a command (`subprocess.run`/`Popen`) under the
   effective UID, logging a host/program/timestamp/user line to `pgstart.log`.
 
+## Installing rda-python-common
+
+For local development, clone this repo alongside your project and install it
+in editable mode so that changes are picked up without re-installing:
+
+```bash
+git clone https://github.com/NCAR/rda-python-common.git
+cd rda-python-common
+pip install -e .
+```
+
+For a regular (non-editable) install from a checkout:
+
+```bash
+pip install /path/to/rda-python-common
+```
+
+For a production install on a system that uses the published distribution:
+
+```bash
+pip install rda_python_common
+```
+
+The package brings in its own transitive dependencies (`psycopg2-binary`,
+`rda-python-globus`, `unidecode`, `hvac`).
+
 ## Dependency requirement
 
 Any Python package whose programs are to be run via the setuid mechanism must declare
