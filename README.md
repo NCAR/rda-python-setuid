@@ -65,25 +65,30 @@ execs `setuid_dsarch` as CommonUser.
 
 ## Environment setup
 
+Create a Python environment first; package installs in the next section run
+inside whichever environment you activate here.
+
 ### Option A — Python venv (DECS machines)
 
 ```bash
 python3 -m venv $ENVHOME          # e.g. /glade/u/home/gdexdata/gdexmsenv
 source $ENVHOME/bin/activate
-pip install rda_python_setuid rda_python_dsarch ...
 ```
 
 ### Option B — Conda (DAV/Casper)
 
 ```bash
-conda create -n pg-gdex python=3.10
+conda create -n pg-gdex python=3.12
 conda activate pg-gdex
-pip install rda_python_setuid rda_python_dsarch ...
 ```
 
 The conda environment is typically at `/glade/work/gdexdata/conda-envs/pg-gdex`.
 
 ## Installing rda-python-setuid
+
+Pick whichever install mode fits your workflow.  All three pull in the
+transitive dependency (`rda_python_common`) automatically.  Once installed,
+the `pywrapper-install` CLI is available for the setuid wiring steps below.
 
 For local development, clone this repo alongside your project and install it
 in editable mode so that changes are picked up without re-installing:
@@ -106,12 +111,10 @@ For a production install on a system that uses the published distribution:
 pip install rda_python_setuid
 ```
 
-The package brings in its own transitive dependencies (`rda_python_common`).
+## Setuid wrapper setup
 
-## Installation
-
-After setting up the environment and installing packages, run `pywrapper-install`
-with no arguments to display the full user guide:
+With `rda_python_setuid` installed in the active environment, run
+`pywrapper-install` with no arguments to display the full user guide:
 
 ```bash
 pywrapper-install
