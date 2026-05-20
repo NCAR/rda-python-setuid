@@ -27,8 +27,9 @@ Two Python entry points are packaged alongside the C wrapper:
 
 - **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<USER>`
   copy of `pywrapper`.  Reads the real/effective UIDs from `PGLOG`, then
-  permits execution only if the real user matches the effective user or the
-  shared GDEX common user (`PGLOG['GDEXUSER']`); unauthorized callers receive
+  permits execution only if the real user is in `['zji', euser, PGLOG['GDEXUSER']]`
+  (i.e. the fixed specialist `zji`, the effective user, or the shared GDEX common
+  user); unauthorized callers receive
   an informational message and exit.  After authorization it parses leading
   flag tokens — `-bg` (background via `subprocess.Popen`), `-fg` (explicit
   foreground, default), `-cwd <dir>` (chdir before exec), and the same
@@ -100,11 +101,22 @@ pip install rda_python_dsarch
 # 2. Compile pywrapper C binary (once per environment):
 pywrapper-install -c|--compile
 
-# 3. Wire up each program as a setuid entry:
+# 3. Wire up each program as a setuid entry (specify name or use 'all'):
 pywrapper-install -l|--link dsarch
+pywrapper-install -l|--link all           # auto-link every setuid_* entry not yet linked
 
 # 4. Optionally, allow a specialist to run commands as themselves:
-pywrapper-install -p|--pgstart -u|--user zji
+pywrapper-install -p|--pgstart -n|--username zji
+```
+
+### Update an existing installation (no sudo required)
+
+When the package is upgraded and a new `pywrapper.c` is bundled, use `-u/--update`
+to recompile and reinstall all setuid binaries without needing `sudo`.  The existing
+`pgstart_*` binaries in `bin/` are used to perform the privileged operations:
+
+```bash
+pywrapper-install -u|--update [-n|--username gdexdata] [-e|--envhome $ENVHOME]
 ```
 
 ### Simple install (no sudo required, runs as current user)
@@ -115,6 +127,7 @@ direct symlink from `dsarch` to `setuid_dsarch`:
 ```bash
 pip install rda_python_dsarch
 pywrapper-install -l|--link dsarch -s|--simple
+pywrapper-install -l|--link all -s|--simple   # or link all setuid_* entries at once
 ```
 
 ## Runtime flow

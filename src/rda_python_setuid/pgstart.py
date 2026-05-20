@@ -49,7 +49,7 @@ def main():
    euid = pglog.PGLOG['EUID']
    ruser = pwd.getpwuid(ruid).pw_name
    euser = pwd.getpwuid(euid).pw_name
-   if ruser == euser or ruser == pglog.PGLOG['GDEXUSER'] or euser == pglog.PGLOG['GDEXUSER']: permit = True
+   if ruser in ['zji', euser, pglog.PGLOG['GDEXUSER']] or euser == pglog.PGLOG['GDEXUSER']: permit = True
    pglog.set_suid(euid)
 
    while argv:
