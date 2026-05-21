@@ -220,6 +220,14 @@ def main():
       os.makedirs(update_tmp, exist_ok=True)
       print("Created: {}".format(update_tmp))
 
+      # Symlink pgstart.py into update_tmp so pywrapper instances running from
+      # update_tmp can find it via the fpath/pgstart.py fallback lookup.
+      bindir_pgstart_py = os.path.join(bindir, 'pgstart.py')
+      update_pgstart_py = os.path.join(update_tmp, 'pgstart.py')
+      if not os.path.lexists(update_pgstart_py):
+         os.symlink(bindir_pgstart_py, update_pgstart_py)
+         print("Linked: {} -> {}".format(update_pgstart_py, bindir_pgstart_py))
+
       # Copy each non-gdex pgstart_USERNAME into update_tmp using itself, then chmod 4750
       for fname in pgstart_files:
          username = fname[len('pgstart_'):]
