@@ -40,7 +40,7 @@ def main():
    pglog = PgLOG()
    permit = False
    pglog.PGLOG['LOGFILE'] = "pgstart.log"
-   aname = PgLOG.get_command()
+   aname = pglog.get_command()
    bckgrd = False
    workdir = None
    argv = sys.argv[1:]
