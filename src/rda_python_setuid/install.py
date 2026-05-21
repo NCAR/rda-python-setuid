@@ -249,5 +249,9 @@ def main():
             run([update_pgstart, 'chmod', '4750', target])
             print("Updated: {} (setuid, owned by {})".format(target, username))
 
+      # Clean up the temporary working directory
+      shutil.rmtree(update_tmp)
+      print("Removed: {}".format(update_tmp))
+
 
 if __name__ == '__main__': main()
