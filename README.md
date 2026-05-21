@@ -63,6 +63,25 @@ automatically.  `pywrapper-install -l/--link` creates the symlink
 `dsarch -> pywrapper`; running `dsarch` goes through the setuid wrapper, which
 execs `setuid_dsarch` as CommonUser.
 
+The `main()` of each wrapped program (e.g. `rda_python_dsarch/dsarch.py`) must
+also call `show_setup_guide()` at the top of `main()`, passing an instance of
+the program's class along with the package name and list of setuid program
+names:
+
+```python
+def main():
+   from rda_python_setuid.setup_guide import show_setup_guide
+   object = DsArch()
+   show_setup_guide(object, 'rda_python_dsarch', ['dsarch'])
+   ...
+```
+
+When `setuid_dsarch` is invoked directly (before pywrapper symlinks are set
+up, so euid ≠ CommonUser), `show_setup_guide()` prints the shared setuid setup
+guide and exits.  When invoked via the `dsarch -> pywrapper` symlink (euid =
+CommonUser), `get_command()` strips the `setuid_` prefix, the check inside
+`show_setup_guide()` fails, and the program runs normally.
+
 ## Environment setup
 
 Create a Python environment first; package installs in the next section run
