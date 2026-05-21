@@ -168,17 +168,27 @@ def main():
                print("Created: {} -> pywrapper".format(target))
 
    elif args.pgstart:
-      # Mode 2: copy pywrapper to pgstart_USER with setuid owned by USER
+      # Mode 2: create pgstart_USER with setuid owned by USER.
+      # When USER already owns pywrapper (i.e. the common user), pywrapper is
+      # already setuid owned by USER, so a symlink is sufficient; otherwise
+      # copy pywrapper and chmod 4750 as USER.
       if not os.path.exists(pywrapper):
-         print("Error: {} not found. Run pywrapper-install --username COMMONUSER first.".format(pywrapper))
+         print("Error: {} not found. Run pywrapper-install --compile --username COMMONUSER first.".format(pywrapper))
          sys.exit(1)
       target = os.path.join(bindir, 'pgstart_{}'.format(args.username))
       import pwd
-      curuser = pwd.getpwuid(os.getuid()).pw_name
-      sudo_prefix = [] if curuser == args.username else ['sudo', '-u', args.username]
-      run(sudo_prefix + ['cp', pywrapper, target])
-      run(sudo_prefix + ['chmod', '4750', target])
-      print("Installed: {} (setuid, owned by {})".format(target, args.username))
+      pywrapper_owner = pwd.getpwuid(os.stat(pywrapper).st_uid).pw_name
+      if args.username == pywrapper_owner:
+         if os.path.lexists(target):
+            os.remove(target)
+         os.symlink(pywrapper, target)
+         print("Linked: {} -> pywrapper (setuid, owned by {})".format(target, args.username))
+      else:
+         curuser = pwd.getpwuid(os.getuid()).pw_name
+         sudo_prefix = [] if curuser == args.username else ['sudo', '-u', args.username]
+         run(sudo_prefix + ['cp', pywrapper, target])
+         run(sudo_prefix + ['chmod', '4750', target])
+         print("Installed: {} (setuid, owned by {})".format(target, args.username))
 
    elif args.compile:
       # Compile pywrapper.c and install pywrapper with setuid
