@@ -123,6 +123,17 @@ def main():
    pywrapper = os.path.join(bindir, 'pywrapper')
 
    if args.link:
+      # For appname -> pywrapper links, run `ln -s` via pgstart_<commonuser> so
+      # the resulting symlink is owned by the common user (pywrapper owner).
+      pgstart_common = None
+      if not args.simple and os.path.exists(pywrapper):
+         import pwd
+         common_user = pwd.getpwuid(os.stat(pywrapper).st_uid).pw_name
+         pgstart_common = os.path.join(bindir, 'pgstart_' + common_user)
+         if not os.path.exists(pgstart_common):
+            print("Error: {} not found. Run pywrapper-install --pgstart --username {} first.".format(pgstart_common, common_user))
+            sys.exit(1)
+
       if args.link.lower() == 'all':
          # Discover all setuid_* entries in bindir and link any that are missing
          appnames = sorted(
@@ -143,7 +154,7 @@ def main():
                if os.path.lexists(target):
                   print("Already exists: {}".format(target))
                else:
-                  os.symlink(pywrapper, target)
+                  run([pgstart_common, 'ln', '-s', pywrapper, target])
                   print("Created: {} -> pywrapper".format(target))
       else:
          target = os.path.join(bindir, args.link)
@@ -164,7 +175,7 @@ def main():
             if os.path.lexists(target):
                print("Already exists: {}".format(target))
             else:
-               os.symlink(pywrapper, target)
+               run([pgstart_common, 'ln', '-s', pywrapper, target])
                print("Created: {} -> pywrapper".format(target))
 
    elif args.pgstart:
