@@ -19,36 +19,47 @@
  -----------------
 
    Option A - Python venv (DECS machines):
-      python3 -m venv $ENVHOME    # e.g. /glade/u/home/gdexdata/gdexmsenv
+      python3 -m venv $ENVHOME          # e.g. /glade/u/home/gdexdata/gdexmsenv
       source $ENVHOME/bin/activate
-      pip install {PKGNAME}
 
    Option B - Conda (DAV/Casper):
-      conda activate pg-gdex      # e.g. /glade/work/gdexdata/conda-envs/pg-gdex
-      pip install {PKGNAME}
+      conda create --prefix $ENVHOME python=3.12   # e.g. /glade/work/gdexdata/conda-envs/pg-gdex
+      conda activate $ENVHOME
 
- Full Setuid Install (requires sudo access to gdexdata)
- ------------------------------------------------------
+ Full Setuid Setup (requires sudo access to gdexdata)
+ ----------------------------------------------------
 
-   # Compile the pywrapper C binary (once per environment):
+   # 1. Install the target package (pulls in rda_python_setuid automatically):
+   pip install {PKGNAME}
+
+   # 2. Compile the pywrapper C binary (once per environment):
    pywrapper-install -c|--compile -n|--username gdexdata
 
-   # Wire up the setuid programs (or use 'all' to link every setuid_* at once):
-   pywrapper-install -l|--link all
+   # 3. Wire up each program as a setuid entry (specify name or use 'all'):
+   pywrapper-install -l|--link <program>
+   pywrapper-install -l|--link all     # auto-link every setuid_* entry not yet linked
 
- Simple Install (no sudo required, runs as current user)
- -------------------------------------------------------
-
-   pywrapper-install -l|--link all -s|--simple
-
-   This creates bin/<name> -> bin/setuid_<name>.
-   The programs run as the current user with no privilege change.
+   # 4. Optionally, allow a specialist to run commands as themselves:
+   pywrapper-install -p|--pgstart -n|--username <user>
 
  Update Existing Installation (no sudo required)
  -----------------------------------------------
 
-   pywrapper-install -u|--update
+   When the package is upgraded and a new pywrapper.c is bundled, use
+   -u/--update to recompile and reinstall all setuid binaries without
+   needing sudo.  The existing pgstart_* binaries in bin/ are used to
+   perform the privileged operations:
 
-   Recompiles pywrapper and reinstalls all pgstart_* setuid binaries
-   using the existing pgstart_* binaries already in bin/.
+   pywrapper-install -u|--update [-n|--username gdexdata] [-e|--envhome $ENVHOME]
+
+ Simple Install (no sudo required, runs as current user)
+ -------------------------------------------------------
+
+   Users who do not need the setuid mechanism can create direct symlinks
+   from <name> to setuid_<name>:
+
+   pywrapper-install -l|--link <program> -s|--simple
+   pywrapper-install -l|--link all -s|--simple    # or link all setuid_* entries at once
+
+   The programs run as the current user with no privilege change.
 
