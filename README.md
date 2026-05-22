@@ -11,8 +11,10 @@ Two modes are supported:
 
 - **Mode 1 (CommonUser program):** a symlink `dsarch -> pywrapper` runs `setuid_dsarch`
   as the common user.
-- **Mode 2 (pgstart specialist):** a copy `pgstart_zji` runs any command as specialist
-  `zji` via `pgstart.py`, restricted to authorized users.
+- **Mode 2 (pgstart specialist):** a copy `pgstart_<loginname>` (e.g. `pgstart_zji`)
+  runs any command as `<loginname>` via `pgstart.py`.  `<loginname>` can be any
+  user that belongs to the same group as `PGLOG['COMMONUSER']`.  Execution is
+  restricted to authorized callers (see `pgstart.py` below).
 
 Two Python entry points are packaged alongside the C wrapper:
 
@@ -25,11 +27,12 @@ Two Python entry points are packaged alongside the C wrapper:
   `sys.path`, and `PGLOG` dictionary respectively — handy for verifying the
   setuid environment before wiring up a real program.
 
-- **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<USER>`
+- **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<loginname>`
   copy of `pywrapper`.  Reads the real/effective UIDs from `PGLOG`, then
-  permits execution only if the real user is in `['zji', euser, PGLOG['GDEXUSER']]`
-  (i.e. the fixed specialist `zji`, the effective user, or the shared GDEX common
-  user); unauthorized callers receive
+  permits execution only if the real user is in
+  `[PGLOG['ADMINUSER'], euser, PGLOG['COMMONUSER']]`
+  (i.e. the admin specialist `PGLOG['ADMINUSER']` — default `zji` — the
+  effective user themselves, or the shared common user); unauthorized callers receive
   an informational message and exit.  After authorization it parses leading
   flag tokens — `-bg` (background via `subprocess.Popen`), `-fg` (explicit
   foreground, default), `-cwd <dir>` (chdir before exec), and the same
@@ -159,8 +162,18 @@ pywrapper-install -c|--compile
 pywrapper-install -l|--link dsarch
 pywrapper-install -l|--link all           # auto-link every setuid_* entry not yet linked
 
-# 4. Optionally, allow a specialist to run commands as themselves:
-pywrapper-install -p|--pgstart -n|--username zji
+# 4. Optionally, install a pgstart_<loginname> binary so <loginname> (any user
+#    in the same group as PGLOG['COMMONUSER']) can run commands as themselves
+#    via the setuid wrapper.  Same command in both cases — only the invoker
+#    differs:
+#
+#    4a. If PGLOG['ADMINUSER'] (default zji) can `sudo -u <loginname>`, the
+#        admin sets it up on the user's behalf:
+pywrapper-install -p|--pgstart -n|--username <loginname>
+#
+#    4b. Otherwise <loginname> runs the same command themselves (no sudo
+#        from ADMINUSER required, since they already are <loginname>):
+pywrapper-install -p|--pgstart -n|--username <loginname>
 ```
 
 ### Update an existing installation (no sudo required)

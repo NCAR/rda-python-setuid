@@ -32,8 +32,13 @@
 
       - Option -p or --pgstart
           Mode 2: copy the compiled pywrapper binary to pgstart_USER (owned by USER,
-          chmod 4750).  Allows USER to run arbitrary commands as themselves via the
-          setuid wrapper.  Cannot be combined with -c/--compile or -l/--link.
+          chmod 4750).  Allows USER (any login user in the same group as the
+          common user PGLOG['COMMONUSER']) to run arbitrary commands as themselves
+          via the setuid wrapper.  Two paths for setting up pgstart_USER:
+            (a) if PGLOG['ADMINUSER'] (default zji) can 'sudo -u USER', the admin
+                runs 'pywrapper-install -p -n USER' on behalf of USER; or
+            (b) USER runs the same command themselves (no sudo required).
+          Cannot be combined with -c/--compile or -l/--link.
 
       - Option -l or --link PROGRAM|all
           Mode 1: create a symlink PROGRAM -> pywrapper in the bin/ directory so
@@ -47,7 +52,7 @@
       - Option -u or --update
           Update an existing installation.  Discovers all pgstart_* and pywrapper
           binaries already present in bin/, saves them to a temporary update_tmp/
-          subdirectory, recompiles pywrapper using update_tmp/pgstart_GDEXUSER, and
+          subdirectory, recompiles pywrapper using update_tmp/pgstart_COMMONUSER, and
           reinstalls every pgstart_* binary from update_tmp.  Use -n/--username to
           specify the gdex common user (default: gdexdata).
 
@@ -124,8 +129,11 @@
          pywrapper-install -l dsarch        # one program
          pywrapper-install -l all           # or all setuid_* entries at once
 
-   4. Optionally, allow a specialist to run commands as themselves:
-         pywrapper-install -p
+   4. Optionally, install a pgstart_<loginname> binary so <loginname> (any
+      user in the same group as PGLOG['COMMONUSER']) can run commands as
+      themselves.  Either PGLOG['ADMINUSER'] (default zji, if it has
+      'sudo -u <loginname>'), or <loginname> directly, runs:
+         pywrapper-install -p -n <loginname>
 
    Option B - Simple install (no sudo required, runs as current user):
 
@@ -150,7 +158,8 @@
    4. Wire up all setuid_* entries at once:
          pywrapper-install -l all
 
-   5. Allow specialist zji to run commands as themselves via pgstart:
+   5. Install pgstart_zji so login user zji can run commands as themselves
+      via pgstart (run by ADMINUSER with 'sudo -u zji' available, or by zji):
          pywrapper-install -p -n zji
 
    6. Update an existing installation (recompile and reinstall all setuid binaries):

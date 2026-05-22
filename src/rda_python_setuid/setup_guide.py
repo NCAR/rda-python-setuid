@@ -24,18 +24,18 @@ def show_setup_guide(obj, pkgname, appnames):
    When a package's setuid entry point (e.g. ``setuid_dsarch``) is invoked
    directly before pywrapper symlinks are set up, ``obj.get_command()``
    returns the literal ``setuid_<appname>`` (no prefix stripping, since
-   euid is the real user, not GDEXUSER).  In that case this function reads
+   euid is the real user, not COMMONUSER).  In that case this function reads
    ``setuid_setup.usg`` bundled with rda_python_setuid, substitutes
    ``{PKGNAME}`` and ``{APPNAMES}``, prints the guide, and exits.
 
-   When invoked via the pywrapper symlink (euid = GDEXUSER), the
+   When invoked via the pywrapper symlink (euid = COMMONUSER), the
    ``setuid_`` prefix is stripped by ``get_command()``, the membership
    check fails, and this function returns silently so the program runs
    normally.
 
    Args:
       obj: An instance derived from PgLOG (e.g. DsArch, RdaCp); provides
-         ``get_command()`` with access to ``self.PGLOG['GDEXUSER']``.
+         ``get_command()`` with access to ``self.PGLOG['COMMONUSER']``.
       pkgname: Distribution name (e.g. ``rda_python_dsarch``).
       appnames: List of program names provided by the package that need
          setuid (e.g. ``['dsarch']`` or ``['rdacp', 'rdakill', 'rdamod']``).
