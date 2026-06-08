@@ -40,7 +40,7 @@ def main():
    pglog = PgLOG()
    permit = False
    pglog.PGLOG['LOGFILE'] = "pgstart.log"
-   aname = PgLOG.get_command()
+   aname = pglog.get_command()
    bckgrd = False
    workdir = None
    argv = sys.argv[1:]
@@ -49,7 +49,7 @@ def main():
    euid = pglog.PGLOG['EUID']
    ruser = pwd.getpwuid(ruid).pw_name
    euser = pwd.getpwuid(euid).pw_name
-   if ruser == euser or ruser == pglog.PGLOG['GDEXUSER'] or euser == pglog.PGLOG['GDEXUSER']: permit = True
+   if ruser in [pglog.PGLOG['ADMINUSER'], euser, pglog.PGLOG['COMMONUSER']] or euser == pglog.PGLOG['COMMONUSER']: permit = True
    pglog.set_suid(euid)
 
    while argv:
@@ -69,7 +69,7 @@ def main():
       print("* Your Login Name is {}({}) & Effective User Name is {}({}).".format(ruser, ruid, euser, euid))
       print("* Pass a command or options -(bg|fg|cwd|env|inc|plg) to run '{}'.".format(aname))
       if not permit:
-         print("* You must be '{}' or '{}' to execute a command as user '{}'.".format(euser, pglog.PGLOG['GDEXUSER'], euser))
+         print("* You must be '{}' or '{}' to execute a command as user '{}'.".format(euser, pglog.PGLOG['COMMONUSER'], euser))
       print("********************************************************************")
       sys.exit(0)
 

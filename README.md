@@ -11,8 +11,10 @@ Two modes are supported:
 
 - **Mode 1 (CommonUser program):** a symlink `dsarch -> pywrapper` runs `setuid_dsarch`
   as the common user.
-- **Mode 2 (pgstart specialist):** a copy `pgstart_zji` runs any command as specialist
-  `zji` via `pgstart.py`, restricted to authorized users.
+- **Mode 2 (pgstart specialist):** a copy `pgstart_<loginname>` (e.g. `pgstart_zji`)
+  runs any command as `<loginname>` via `pgstart.py`.  `<loginname>` can be any
+  user that belongs to the same group as `PGLOG['COMMONUSER']`.  Execution is
+  restricted to authorized callers (see `pgstart.py` below).
 
 Two Python entry points are packaged alongside the C wrapper:
 
@@ -25,10 +27,12 @@ Two Python entry points are packaged alongside the C wrapper:
   `sys.path`, and `PGLOG` dictionary respectively — handy for verifying the
   setuid environment before wiring up a real program.
 
-- **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<USER>`
+- **`pgstart.py`** — the Mode 2 launcher invoked through a `pgstart_<loginname>`
   copy of `pywrapper`.  Reads the real/effective UIDs from `PGLOG`, then
-  permits execution only if the real user matches the effective user or the
-  shared GDEX common user (`PGLOG['GDEXUSER']`); unauthorized callers receive
+  permits execution only if the real user is in
+  `[PGLOG['ADMINUSER'], euser, PGLOG['COMMONUSER']]`
+  (i.e. the admin specialist `PGLOG['ADMINUSER']` — default `zji` — the
+  effective user themselves, or the shared common user); unauthorized callers receive
   an informational message and exit.  After authorization it parses leading
   flag tokens — `-bg` (background via `subprocess.Popen`), `-fg` (explicit
   foreground, default), `-cwd <dir>` (chdir before exec), and the same
@@ -62,30 +66,84 @@ automatically.  `pywrapper-install -l/--link` creates the symlink
 `dsarch -> pywrapper`; running `dsarch` goes through the setuid wrapper, which
 execs `setuid_dsarch` as CommonUser.
 
+The `main()` of each wrapped program (e.g. `rda_python_dsarch/dsarch.py`) must
+also call `show_setup_guide()` at the top of `main()`, passing an instance of
+the program's class along with the package name and list of setuid program
+names:
+
+```python
+def main():
+   from rda_python_setuid.setup_guide import show_setup_guide
+   object = DsArch()
+   show_setup_guide(object, 'rda_python_dsarch', ['dsarch'])
+   ...
+```
+
+When `setuid_dsarch` is invoked directly (before pywrapper symlinks are set
+up, so euid ≠ CommonUser), `show_setup_guide()` prints the shared setuid setup
+guide and exits.  When invoked via the `dsarch -> pywrapper` symlink (euid =
+CommonUser), `get_command()` strips the `setuid_` prefix, the check inside
+`show_setup_guide()` fails, and the program runs normally.
+
 ## Environment setup
+
+Create a Python environment first; package installs in the next section run
+inside whichever environment you activate here.
 
 ### Option A — Python venv (DECS machines)
 
 ```bash
 python3 -m venv $ENVHOME          # e.g. /glade/u/home/gdexdata/gdexmsenv
 source $ENVHOME/bin/activate
-pip install rda_python_setuid rda_python_dsarch ...
 ```
 
 ### Option B — Conda (DAV/Casper)
 
 ```bash
-conda create -n pg-gdex python=3.10
-conda activate pg-gdex
-pip install rda_python_setuid rda_python_dsarch ...
+conda create --prefix $ENVHOME python=3.12   # e.g. /glade/work/gdexdata/conda-envs/pg-gdex
+conda activate $ENVHOME
 ```
 
-The conda environment is typically at `/glade/work/gdexdata/conda-envs/pg-gdex`.
+## Installing rda-python-setuid
 
-## Installation
+Pick whichever install mode fits your workflow.  All four pull in the
+transitive dependency (`rda_python_common`) automatically.  Once installed,
+the `pywrapper-install` CLI is available for the setuid wiring steps below.
 
-After setting up the environment and installing packages, run `pywrapper-install`
-with no arguments to display the full user guide:
+For local development, clone this repo alongside your project and install it
+in editable mode so that changes are picked up without re-installing:
+
+```bash
+git clone https://github.com/NCAR/rda-python-setuid.git
+cd rda-python-setuid
+pip install -e .
+```
+
+To test a specific branch (e.g. an in-progress feature or fix branch), pass
+`-b/--branch` to `git clone`:
+
+```bash
+git clone -b <branch-name> https://github.com/NCAR/rda-python-setuid.git
+cd rda-python-setuid
+pip install -e .
+```
+
+For a regular (non-editable) install from a checkout:
+
+```bash
+pip install /path/to/rda-python-setuid
+```
+
+For a production install on a system that uses the published distribution:
+
+```bash
+pip install rda_python_setuid
+```
+
+## Setuid wrapper setup
+
+With `rda_python_setuid` installed in the active environment, run
+`pywrapper-install` with no arguments to display the full user guide:
 
 ```bash
 pywrapper-install
@@ -100,11 +158,32 @@ pip install rda_python_dsarch
 # 2. Compile pywrapper C binary (once per environment):
 pywrapper-install -c|--compile
 
-# 3. Wire up each program as a setuid entry:
+# 3. Wire up each program as a setuid entry (specify name or use 'all'):
 pywrapper-install -l|--link dsarch
+pywrapper-install -l|--link all           # auto-link every setuid_* entry not yet linked
 
-# 4. Optionally, allow a specialist to run commands as themselves:
-pywrapper-install -p|--pgstart -u|--user zji
+# 4. Optionally, install a pgstart_<loginname> binary so <loginname> (any user
+#    in the same group as PGLOG['COMMONUSER']) can run commands as themselves
+#    via the setuid wrapper.  Same command in both cases — only the invoker
+#    differs:
+#
+#    4a. If PGLOG['ADMINUSER'] (default zji) can `sudo -u <loginname>`, the
+#        admin sets it up on the user's behalf:
+pywrapper-install -p|--pgstart -n|--username <loginname>
+#
+#    4b. Otherwise <loginname> runs the same command themselves (no sudo
+#        from ADMINUSER required, since they already are <loginname>):
+pywrapper-install -p|--pgstart -n|--username <loginname>
+```
+
+### Update an existing installation (no sudo required)
+
+When the package is upgraded and a new `pywrapper.c` is bundled, use `-u/--update`
+to recompile and reinstall all setuid binaries without needing `sudo`.  The existing
+`pgstart_*` binaries in `bin/` are used to perform the privileged operations:
+
+```bash
+pywrapper-install -u|--update [-n|--username gdexdata] [-e|--envhome $ENVHOME]
 ```
 
 ### Simple install (no sudo required, runs as current user)
@@ -115,6 +194,7 @@ direct symlink from `dsarch` to `setuid_dsarch`:
 ```bash
 pip install rda_python_dsarch
 pywrapper-install -l|--link dsarch -s|--simple
+pywrapper-install -l|--link all -s|--simple   # or link all setuid_* entries at once
 ```
 
 ## Runtime flow

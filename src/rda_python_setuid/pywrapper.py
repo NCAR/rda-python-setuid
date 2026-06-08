@@ -32,6 +32,8 @@ def main():
       -plg  -- print PGLOG variables and exit
    """
    pglog = PgLOG()
+   from rda_python_setuid.setup_guide import show_setup_guide
+   show_setup_guide(pglog, 'rda_python_setuid', ['pywrapper'])
    pglog.set_suid(pglog.PGLOG['EUID'])
    inc = True
    print("********************************************************************")
