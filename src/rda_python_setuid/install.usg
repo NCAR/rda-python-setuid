@@ -6,7 +6,8 @@
                           ( -c|--compile
                           | -p|--pgstart
                           | -l|--link PROGRAM|all [-s|--simple]
-                          | -m|--cmlink PROGRAM [-t|--target SCRIPT] [-d|--destdir DIR]
+                          | -m|--cmlink PROGRAM [-s|--simple] [-t|--target SCRIPT]
+                                                 [-d|--destdir DIR]
                           | -u|--update )
 
  Run pywrapper-install with no arguments to display this user guide.  Exactly
@@ -66,9 +67,18 @@
           as gdexcp, which would let any user on the machine read or overwrite
           any file of the common user.
 
+          Add -s/--simple to compile the binary 755 with no setuid, which is how
+          a program of this environment is published to users who do not have the
+          environment at all, such as gdexls.  There is no privilege change, so
+          the caller's environment is kept except for PYTHONPATH, PYTHONHOME and
+          PYTHONSTARTUP, which would send the program to another environment's
+          modules.  The default -t/--target is then bin/PROGRAM, and no sudo
+          access to USER is needed.
+
       - Option -t or --target SCRIPT (use with -m/--cmlink)
           Absolute path of the python script the cmwrapper binary execs.
-          Defaults to bin/setuid_PROGRAM of the environment.
+          Defaults to bin/setuid_PROGRAM of the environment, or to bin/PROGRAM
+          with -s/--simple.
 
       - Option -d or --destdir DIR (use with -m/--cmlink)
           Directory to install the cmwrapper binary into, typically a common area
@@ -82,11 +92,13 @@
           reinstalls every pgstart_* binary from update_tmp.  Use -n/--username to
           specify the gdex common user (default: gdexdata).
 
-      - Option -s or --simple (use with -l/--link)
-          Simple install: create a symlink PROGRAM -> setuid_PROGRAM directly,
-          skipping the setuid mechanism entirely.  The program runs as the current
-          user with no privilege change.  -n/--username is not required with this option.
-          Useful for users who do not need or cannot set up the setuid wrapper.
+      - Option -s or --simple (use with -l/--link or -m/--cmlink)
+          Simple install: skip the setuid mechanism entirely, so that the program
+          runs as the current user with no privilege change.  -n/--username is not
+          required with this option.  With -l/--link, a symlink PROGRAM ->
+          setuid_PROGRAM is created for users who do not need or cannot set up the
+          setuid wrapper; with -m/--cmlink, a 755 cmwrapper binary is compiled for
+          users who do not have this environment at all.
 
  Convention for wrapped programs:
    Any Python package whose program is to be run via pywrapper must:
@@ -200,3 +212,7 @@
    9. Let users outside the gdexdata group run gdexdrop as gdexdata, installing
       the 4755 binary into a common area on everyone's PATH:
          pywrapper-install -m gdexdrop -d /glade/u/home/gdexdata/bin
+
+  10. Publish gdexls of this environment to users who have no environment of
+      their own, with no setuid and no privilege change:
+         pywrapper-install -m gdexls -s -d /glade/u/apps/contrib

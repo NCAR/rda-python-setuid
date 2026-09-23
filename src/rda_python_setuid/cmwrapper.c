@@ -33,6 +33,15 @@
  *    # Compile and install bin/PROGRAM as a 4755 setuid binary owned by CommonUser:
  *    pywrapper-install -m|--cmlink PROGRAM [-n|--username CommonUser] [-e|--envhome $ENVHOME]
  *
+ *    # Compile it 755 with no setuid, to publish a program of an environment to
+ *    # users who do not have that environment (-DCMSIMPLE):
+ *    pywrapper-install -m|--cmlink PROGRAM -s|--simple [-d|--destdir DIR]
+ *
+ *    With -DCMSIMPLE there is no privilege change, so the caller's environment is
+ *    kept except for PYTHONPATH, PYTHONHOME and PYTHONSTARTUP, which would send the
+ *    program to another environment's modules.  Sanitizing the rest would buy no
+ *    security and would only break the caller's own settings.
+ *
  \***************************************************************************************/
 
 #include <unistd.h>
@@ -47,15 +56,38 @@
 #error "CMEXEC must be defined at compile time, e.g. -DCMEXEC=\"/env/bin/setuid_gdexdrop\""
 #endif
 
+#ifdef CMSIMPLE
+
+/* Python variables of the caller that would make the wrapped program load modules
+   from somewhere other than its own environment. */
+static const char *dropvars[] = {"PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", NULL};
+
+#else
+
 #define CMPATH "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 /* Environment variables passed through from the caller.  Everything else is
    dropped; in particular every PYTHON*, LD_* and PGLOG path variable. */
 static const char *keepvars[] = {"HOME", "USER", "LOGNAME", "TERM", "LANG", "TZ", NULL};
 
+#endif
+
 /* main program */
 int main(int argc, char *argv[]) {
    (void)argc;
+
+#ifdef CMSIMPLE
+
+   /* No privilege change, so sanitizing the environment buys no security and can
+      only break the caller's own settings.  Only the Python variables that would
+      send the program to another environment's modules are dropped. */
+   int i;
+
+   for(i = 0; dropvars[i] != NULL; i++) unsetenv(dropvars[i]);
+   argv[0] = (char *)CMPROG;
+   execv(CMEXEC, argv);
+
+#else
 
    char *envp[16];
    char *value, *entry;
@@ -80,6 +112,9 @@ int main(int argc, char *argv[]) {
 
    argv[0] = (char *)CMPROG;   /* the program identifies itself by this name */
    execve(CMEXEC, argv, envp);
-   perror(CMEXEC);   /* execve only returns on error */
+
+#endif
+
+   perror(CMEXEC);   /* exec only returns on error */
    exit(1);
 }
