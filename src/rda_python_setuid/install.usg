@@ -6,11 +6,12 @@
                           ( -c|--compile
                           | -p|--pgstart
                           | -l|--link PROGRAM|all [-s|--simple]
+                          | -m|--cmlink PROGRAM [-t|--target SCRIPT] [-d|--destdir DIR]
                           | -u|--update )
 
  Run pywrapper-install with no arguments to display this user guide.  Exactly
- one of -c/--compile, -p/--pgstart, -l/--link, or -u/--update must be given
- to perform an action.
+ one of -c/--compile, -p/--pgstart, -l/--link, -m/--cmlink, or -u/--update
+ must be given to perform an action.
 
       - Option -n or --username USERNAME
           The user name to own the setuid binary.  For Mode 1 (CommonUser program),
@@ -48,6 +49,31 @@
           -p/--pgstart.
           Use 'all' instead of a program name to scan bin/ for every setuid_*
           entry and add any missing PROGRAM -> pywrapper symlinks in one pass.
+
+      - Option -m or --cmlink PROGRAM
+          Mode 3: compile cmwrapper.c (bundled with this package) into a dedicated
+          binary named PROGRAM, owned by USER with chmod 4755 (setuid), so that
+          users who are NOT in the common user's group can run PROGRAM as
+          CommonUser.  Unlike pywrapper, the script to exec is baked into the
+          binary at compile time and the environment is replaced with a fixed
+          whitelist, so the binary cannot be symlinked under another name to reach
+          a different program, and PYTHONPATH, LD_PRELOAD or the PGLOG path
+          variables cannot be used to run code as CommonUser.  One binary is
+          compiled per program.  Cannot be combined with the other actions.
+
+          Only wrap a program that does its own authorization and confines where
+          it writes, such as gdexdrop; never wrap a general purpose program such
+          as gdexcp, which would let any user on the machine read or overwrite
+          any file of the common user.
+
+      - Option -t or --target SCRIPT (use with -m/--cmlink)
+          Absolute path of the python script the cmwrapper binary execs.
+          Defaults to bin/setuid_PROGRAM of the environment.
+
+      - Option -d or --destdir DIR (use with -m/--cmlink)
+          Directory to install the cmwrapper binary into, typically a common area
+          on everyone's PATH, such as /glade/u/home/gdexdata/bin.  Defaults to the
+          bin/ directory of the environment.
 
       - Option -u or --update
           Update an existing installation.  Discovers all pgstart_* and pywrapper
@@ -170,3 +196,7 @@
 
    8. Simple install of all setuid_* entries at once:
          pywrapper-install -l all -s
+
+   9. Let users outside the gdexdata group run gdexdrop as gdexdata, installing
+      the 4755 binary into a common area on everyone's PATH:
+         pywrapper-install -m gdexdrop -d /glade/u/home/gdexdata/bin

@@ -7,7 +7,7 @@ via setuid for effective and common user names.
 user, then `execv`s a Python entry point script.  This allows Python programs to run
 as a designated common user (e.g. `gdexdata`) without requiring `sudo` access.
 
-Two modes are supported:
+Three modes are supported:
 
 - **Mode 1 (CommonUser program):** a symlink `dsarch -> pywrapper` runs `setuid_dsarch`
   as the common user.
@@ -15,6 +15,10 @@ Two modes are supported:
   runs any command as `<loginname>` via `pgstart.py`.  `<loginname>` can be any
   user that belongs to the same group as `PGLOG['COMMONUSER']`.  Execution is
   restricted to authorized callers (see `pgstart.py` below).
+- **Mode 3 (cmwrapper, callers outside the group):** a dedicated binary compiled
+  from `cmwrapper.c` and installed `4755` runs ONE fixed program as the common
+  user for any user on the machine, including users outside the common user's
+  group (see "cmwrapper" below).
 
 Two Python entry points are packaged alongside the C wrapper:
 
@@ -197,6 +201,45 @@ pywrapper-install -l|--link dsarch -s|--simple
 pywrapper-install -l|--link all -s|--simple   # or link all setuid_* entries at once
 ```
 
+### cmwrapper (Mode 3, for callers outside the CommonUser group)
+
+`pywrapper` is installed `4750`, so only members of the common user's group can
+execute it.  That group restriction is what makes it safe for `pywrapper` to pick
+the program to run from `basename(argv[0])`: anyone who can execute it can already
+reach every `setuid_*` entry in `bin/` just by naming the symlink differently.
+
+`cmwrapper` is for the opposite case — letting users who are **not** in the common
+user's group run one specific program as the common user.  It is installed `4755`,
+i.e. executable by everyone, so nothing about what it runs may come from the caller:
+
+- the absolute path of the script to exec, and the program name, are baked into the
+  binary at compile time, so it cannot be symlinked under another name to reach a
+  different program;
+- the environment is replaced with a fixed whitelist (`HOME`, `USER`, `LOGNAME`,
+  `TERM`, `LANG`, `TZ`, a fixed `PATH` and `PYTHONNOUSERSITE=1`), so `PYTHONPATH`,
+  `PYTHONHOME`, `LD_PRELOAD`, `LD_LIBRARY_PATH` and the `PGLOG` path variables
+  (`DSDHOME`, `DSSHOME`, `LOGPATH`, `COMMONUSER`, ...) cannot be used to run
+  arbitrary code, or redirect where files are written, as the common user.
+
+One binary is compiled per wrapped program:
+
+```bash
+# Install bin/gdexdrop as a 4755 binary that execs bin/setuid_gdexdrop:
+pywrapper-install -m|--cmlink gdexdrop
+
+# Same, but installed into a common area already on everyone's PATH:
+pywrapper-install -m|--cmlink gdexdrop -d|--destdir /glade/u/home/gdexdata/bin
+
+# Point it at a script somewhere other than bin/setuid_gdexdrop:
+pywrapper-install -m|--cmlink gdexdrop -t|--target /path/to/setuid_gdexdrop
+```
+
+Only wrap a program that does its own authorization and confines where it writes,
+such as `gdexdrop`, which checks its caller against an access list and copies only
+into the requested dataset directory.  Never wrap a general purpose program such as
+`gdexcp`: at `4755` that would let any user on the machine read or overwrite any
+file of the common user.
+
 ## Runtime flow
 
 ```
@@ -204,6 +247,11 @@ user runs:  dsarch [args]
               |  (symlink -> pywrapper, setuid bit -> EUID=gdexdata)
 pywrapper.c:  execv(bin/setuid_dsarch, args)
 setuid_dsarch: calls dsarch:main() as gdexdata
+
+user runs:  gdexdrop [args]
+              |  (dedicated 4755 binary, setuid bit -> EUID=gdexdata)
+cmwrapper.c:  execve(bin/setuid_gdexdrop, args, sanitized env)
+setuid_gdexdrop: calls gdexdrop:main() as gdexdata
 ```
 
 ## Github
