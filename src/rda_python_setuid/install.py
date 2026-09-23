@@ -264,8 +264,22 @@ def main():
       cmd = ['gcc', '-DCMPROG="{}"'.format(args.cmlink), '-DCMEXEC="{}"'.format(script)]
       if args.simple: cmd.append('-DCMSIMPLE')
       prefix = [] if args.simple else ['sudo', '-u', args.username]
-      run(prefix + cmd + ['-o', target, src_dest])
-      run(prefix + ['chmod', '755' if args.simple else '4755', target])
+      mode = '755' if args.simple else '4755'
+      # Compile to a temporary file and copy it onto the target, rather than letting
+      # gcc write the target directly: gcc recreates the file, which hands ownership
+      # of a binary in a shared common area to whoever recompiled it last.  'cp'
+      # writes through the file already there, so its owner, group and mode survive,
+      # and the mode is only refreshed when it is ours to change.
+      tmpout = target + '.new'
+      run(prefix + cmd + ['-o', tmpout, src_dest])
+      run(prefix + ['chmod', mode, tmpout])
+      if os.path.exists(target):
+         owned = not args.simple or os.stat(target).st_uid == os.geteuid()
+         run(prefix + ['cp', tmpout, target])
+         run(prefix + ['rm', '-f', tmpout])
+         if owned: run(prefix + ['chmod', mode, target])
+      else:
+         run(prefix + ['mv', tmpout, target])
       if args.simple:
          print("Installed: {} (no setuid, execs {})".format(target, script))
       else:
