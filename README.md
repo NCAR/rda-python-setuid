@@ -18,7 +18,9 @@ Three modes are supported:
 - **Mode 3 (cmwrapper, callers outside the group):** a dedicated binary compiled
   from `cmwrapper.c` and installed `4755` runs ONE fixed program as the common
   user for any user on the machine, including users outside the common user's
-  group (see "cmwrapper" below).
+  group (see "cmwrapper" below).  With `-s|--simple` the same binary is installed
+  `755` with no setuid, which publishes ONE program of this environment to users
+  who have no environment of their own.
 
 Two Python entry points are packaged alongside the C wrapper:
 
@@ -240,6 +242,24 @@ into the requested dataset directory.  Never wrap a general purpose program such
 `gdexcp`: at `4755` that would let any user on the machine read or overwrite any
 file of the common user.
 
+### cmwrapper with no setuid, to publish a program of this environment
+
+Add `-s|--simple` to compile the binary `755` with no setuid bit.  Nothing runs as
+another user; the binary exists only so that users who do not have this environment,
+and cannot activate a venv or a conda environment, can still run one of its programs
+by name — `gdexls`, for example:
+
+```bash
+# Install /glade/u/apps/contrib/gdexls, a 755 binary that execs bin/gdexls:
+pywrapper-install -m|--cmlink gdexls -s|--simple -d|--destdir /glade/u/apps/contrib
+```
+
+Since there is no privilege change, sanitizing the environment would buy no security
+and would only break the caller's own settings, so the caller's environment is passed
+through except for `PYTHONPATH`, `PYTHONHOME` and `PYTHONSTARTUP`, which would send
+the program to another environment's modules.  The default `-t|--target` is
+`bin/PROGRAM` rather than `bin/setuid_PROGRAM`, and no `sudo` access is required.
+
 ## Runtime flow
 
 ```
@@ -252,6 +272,11 @@ user runs:  gdexdrop [args]
               |  (dedicated 4755 binary, setuid bit -> EUID=gdexdata)
 cmwrapper.c:  execve(bin/setuid_gdexdrop, args, sanitized env)
 setuid_gdexdrop: calls gdexdrop:main() as gdexdata
+
+user runs:  gdexls [args]
+              |  (dedicated 755 binary, no setuid, -DCMSIMPLE)
+cmwrapper.c:  execv(bin/gdexls, args)
+gdexls:       calls gdexls:main() as the calling user
 ```
 
 ## Github

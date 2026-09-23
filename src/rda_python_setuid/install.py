@@ -36,6 +36,10 @@
 #   #    group can run one fixed program as CommonUser:
 #   pywrapper-install -m myprog [-t SCRIPT] [-d DESTDIR] [-n gdexdata] [-e $ENVHOME]
 #
+#   # 6b. Compile it 755 with no setuid, to publish a program of this environment to
+#   #     users who do not have the environment at all:
+#   pywrapper-install -m myprog -s [-t SCRIPT] [-d DESTDIR] [-e $ENVHOME]
+#
 # Convention for wrapped programs:
 #   The target package must register its connector entry point with a setuid_ prefix:
 #      [project.scripts]
@@ -93,7 +97,7 @@ def main():
    )
    parser.add_argument(
       '-s', '--simple', action='store_true',
-      help="Simple install: create symlink PROGRAM -> setuid_PROGRAM, skipping setuid (use with -l/--link)"
+      help="Simple install, skipping setuid: symlink PROGRAM -> setuid_PROGRAM with -l/--link, or a 755 cmwrapper binary with -m/--cmlink"
    )
    group = parser.add_mutually_exclusive_group()
    group.add_argument(
@@ -110,7 +114,7 @@ def main():
    )
    group.add_argument(
       '-m', '--cmlink', metavar='PROGRAM',
-      help="Compile a dedicated 4755 cmwrapper binary for PROGRAM, so users outside the CommonUser group can run it (Mode 3)"
+      help="Compile a dedicated 4755 cmwrapper binary for PROGRAM, so users outside the CommonUser group can run it (Mode 3); add -s/--simple for a 755 binary with no setuid"
    )
    group.add_argument(
       '-u', '--update', action='store_true',
@@ -118,7 +122,7 @@ def main():
    )
    parser.add_argument(
       '-t', '--target', default=None,
-      help="Absolute path of the python script a cmwrapper binary execs (default: BINDIR/setuid_PROGRAM; use with -m/--cmlink)"
+      help="Absolute path of the python script a cmwrapper binary execs (default: BINDIR/setuid_PROGRAM, or BINDIR/PROGRAM with -s/--simple; use with -m/--cmlink)"
    )
    parser.add_argument(
       '-d', '--destdir', default=None,
@@ -233,10 +237,15 @@ def main():
       # 4755, so users outside the CommonUser group can run it.  The program path is
       # baked in at compile time and the environment is sanitized by cmwrapper.c, so
       # no symlink under another name can reach a different program.
+      # With -s/--simple the binary is 755 with no setuid, which publishes a program
+      # of this environment to users who do not have the environment at all.
       if not re.match(r'^\w+$', args.cmlink):
          print("Error: invalid program name '{}', expecting word characters only.".format(args.cmlink))
          sys.exit(1)
-      script = args.target if args.target else os.path.join(bindir, 'setuid_' + args.cmlink)
+      if args.target:
+         script = args.target
+      else:
+         script = os.path.join(bindir, args.cmlink if args.simple else 'setuid_' + args.cmlink)
       if not (os.path.isabs(script) and re.match(r'^[\w/.-]+$', script)):
          print("Error: {} of -t/--target must be an absolute path of word characters, '/', '.' and '-'.".format(script))
          sys.exit(1)
@@ -245,15 +254,22 @@ def main():
          sys.exit(1)
       destdir = args.destdir if args.destdir else bindir
       target = os.path.join(destdir, args.cmlink)
+      if os.path.abspath(target) == os.path.abspath(script):
+         print("Error: the binary {} would overwrite the script it execs; give -d/--destdir or -t/--target.".format(target))
+         sys.exit(1)
       src = get_c_source('cmwrapper.c')
       src_dest = os.path.join(bindir, 'cmwrapper.c')
       shutil.copy(src, src_dest)
       print("Copied: {}".format(src_dest))
-      run(['sudo', '-u', args.username, 'gcc',
-           '-DCMPROG="{}"'.format(args.cmlink), '-DCMEXEC="{}"'.format(script),
-           '-o', target, src_dest])
-      run(['sudo', '-u', args.username, 'chmod', '4755', target])
-      print("Installed: {} (setuid, owned by {}, execs {})".format(target, args.username, script))
+      cmd = ['gcc', '-DCMPROG="{}"'.format(args.cmlink), '-DCMEXEC="{}"'.format(script)]
+      if args.simple: cmd.append('-DCMSIMPLE')
+      prefix = [] if args.simple else ['sudo', '-u', args.username]
+      run(prefix + cmd + ['-o', target, src_dest])
+      run(prefix + ['chmod', '755' if args.simple else '4755', target])
+      if args.simple:
+         print("Installed: {} (no setuid, execs {})".format(target, script))
+      else:
+         print("Installed: {} (setuid, owned by {}, execs {})".format(target, args.username, script))
 
    elif args.update:
       # Update an existing installation: recompile pywrapper and reinstall all setuid binaries
