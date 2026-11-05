@@ -17,7 +17,9 @@
 #   # 1. Compile and install pywrapper (run once per environment):
 #   pywrapper-install -c [-n gdexdata] [-e $ENVHOME]
 #
-#   # 2. Create pgstart_USER entry so USER can run commands as themselves:
+#   # 2. Create pgstart_USER entry so USER can run commands as themselves
+#   #    (pgstart_gdexdata is REQUIRED before step 3, which links through it):
+#   pywrapper-install -p -n gdexdata [-e $ENVHOME]
 #   pywrapper-install -p [-n zji] [-e $ENVHOME]
 #
 #   # 3. Create a symlink so a program runs as CommonUser via pywrapper (setuid):

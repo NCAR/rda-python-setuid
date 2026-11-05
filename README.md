@@ -164,20 +164,24 @@ pip install rda_python_dsarch
 # 2. Compile pywrapper C binary (once per environment):
 pywrapper-install -c|--compile
 
-# 3. Wire up each program as a setuid entry (specify name or use 'all'):
+# 3. Install pgstart_<CommonUser> (REQUIRED before step 4: -l/--link creates
+#    the PROGRAM -> pywrapper symlinks as CommonUser through this binary):
+pywrapper-install -p|--pgstart -n|--username gdexdata
+
+# 4. Wire up each program as a setuid entry (specify name or use 'all'):
 pywrapper-install -l|--link dsarch
 pywrapper-install -l|--link all           # auto-link every setuid_* entry not yet linked
 
-# 4. Optionally, install a pgstart_<loginname> binary so <loginname> (any user
+# 5. Optionally, install a pgstart_<loginname> binary so <loginname> (any user
 #    in the same group as PGLOG['COMMONUSER']) can run commands as themselves
 #    via the setuid wrapper.  Same command in both cases — only the invoker
 #    differs:
 #
-#    4a. If PGLOG['ADMINUSER'] (default zji) can `sudo -u <loginname>`, the
+#    5a. If PGLOG['ADMINUSER'] (default zji) can `sudo -u <loginname>`, the
 #        admin sets it up on the user's behalf:
 pywrapper-install -p|--pgstart -n|--username <loginname>
 #
-#    4b. Otherwise <loginname> runs the same command themselves (no sudo
+#    5b. Otherwise <loginname> runs the same command themselves (no sudo
 #        from ADMINUSER required, since they already are <loginname>):
 pywrapper-install -p|--pgstart -n|--username <loginname>
 ```
