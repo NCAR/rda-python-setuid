@@ -47,7 +47,10 @@
           that running PROGRAM invokes the setuid wrapper, which then execs
           setuid_PROGRAM as CommonUser.  setuid_PROGRAM keeps its default
           ownership and permissions.  Cannot be combined with -c/--compile or
-          -p/--pgstart.
+          -p/--pgstart.  The symlink is created as CommonUser through
+          bin/pgstart_COMMONUSER (e.g. pgstart_gdexdata), so that binary must be
+          installed first with 'pywrapper-install -p -n COMMONUSER' (not needed
+          with -s/--simple).
           Use 'all' instead of a program name to scan bin/ for every setuid_*
           entry and add any missing PROGRAM -> pywrapper symlinks in one pass.
 
@@ -163,11 +166,15 @@
    2. Compile pywrapper (once per environment):
          pywrapper-install -c
 
-   3. Wire up each program as a setuid entry:
+   3. Install pgstart_<CommonUser> (REQUIRED before -l/--link, which creates
+      the PROGRAM -> pywrapper symlinks as CommonUser through it):
+         pywrapper-install -p -n gdexdata
+
+   4. Wire up each program as a setuid entry:
          pywrapper-install -l dsarch        # one program
          pywrapper-install -l all           # or all setuid_* entries at once
 
-   4. Optionally, install a pgstart_<loginname> binary so <loginname> (any
+   5. Optionally, install a pgstart_<loginname> binary so <loginname> (any
       user in the same group as PGLOG['COMMONUSER']) can run commands as
       themselves.  Either PGLOG['ADMINUSER'] (default zji, if it has
       'sudo -u <loginname>'), or <loginname> directly, runs:
@@ -190,29 +197,32 @@
    2. Same, but targeting a specific environment:
          pywrapper-install -c -e /glade/u/home/gdexdata/gdexmsenv
 
-   3. Wire up dsarch to run as gdexdata via pywrapper:
+   3. Install pgstart_gdexdata (needed by -l/--link below):
+         pywrapper-install -p -n gdexdata
+
+   4. Wire up dsarch to run as gdexdata via pywrapper:
          pywrapper-install -l dsarch
 
-   4. Wire up all setuid_* entries at once:
+   5. Wire up all setuid_* entries at once:
          pywrapper-install -l all
 
-   5. Install pgstart_zji so login user zji can run commands as themselves
+   6. Install pgstart_zji so login user zji can run commands as themselves
       via pgstart (run by ADMINUSER with 'sudo -u zji' available, or by zji):
          pywrapper-install -p -n zji
 
-   6. Update an existing installation (recompile and reinstall all setuid binaries):
+   7. Update an existing installation (recompile and reinstall all setuid binaries):
          pywrapper-install -u
 
-   7. Simple install of dsarch for a user who does not need setuid:
+   8. Simple install of dsarch for a user who does not need setuid:
          pywrapper-install -l dsarch -s
 
-   8. Simple install of all setuid_* entries at once:
+   9. Simple install of all setuid_* entries at once:
          pywrapper-install -l all -s
 
-   9. Let users outside the gdexdata group run gdexdrop as gdexdata, installing
+  10. Let users outside the gdexdata group run gdexdrop as gdexdata, installing
       the 4755 binary into a common area on everyone's PATH:
          pywrapper-install -m gdexdrop -d /glade/u/home/gdexdata/bin
 
-  10. Publish gdexls of this environment to users who have no environment of
+  11. Publish gdexls of this environment to users who have no environment of
       their own, with no setuid and no privilege change:
          pywrapper-install -m gdexls -s -d /glade/u/apps/contrib
